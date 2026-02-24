@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SystemRoleType {
+  SYSTEM_ADMIN
+  COMPANY_ADMIN
+  COMPANY_USER
+}
+
+enum AssetStorageType {
+  LOCAL
+}
+
+model SystemRole {
+  id          String         @id @default(uuid())
+  type        SystemRoleType @unique
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  users User[]
+}
+
+model User {
+  id String @id @default(uuid())
+
+  systemRoleId   String
+  addressId      String
+  profileAssetId String?
+
+  username  String  @unique
+  password  String
+  firstName String
+  lastName  String
+  email     String? @unique
+  mobile    String? @unique
+
+  isEmailVerified  Boolean @default(false)
+  isMobileVerified Boolean @default(false)
+  isActive         Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  systemRole   SystemRole @relation(fields: [systemRoleId], references: [id])
+  address      Address    @relation(fields: [addressId], references: [id])
+  profileAsset Asset?     @relation("UserProfileAsset", fields: [profileAssetId], references: [id])
+
+  userCompanies UserCompany[]
+  userRoles     UserRole[]
+
+  @@index([systemRoleId])
+  @@index([addressId])
+  @@index([profileAssetId])
+  @@index([deletedAt])
+}
+
+model Company {
+  id String @id @default(uuid())
+
+  addressId      String
+  profileAssetId String?
+
+  name     String
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  address      Address @relation(fields: [addressId], references: [id])
+  profileAsset Asset?  @relation("CompanyProfileAsset", fields: [profileAssetId], references: [id])
+
+  userCompanies UserCompany[]
+  userRoles     UserRole[]
+  roles         Role[]
+
+  @@index([addressId])
+  @@index([profileAssetId])
+  @@index([deletedAt])
+}
+
+model Address {
+  id String @id @default(uuid())
+
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  district     String
+  state        String
+  pincode      String
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  users     User[]
+  companies Company[]
+
+  @@index([deletedAt])
+}
+
+model Asset {
+  id String @id @default(uuid())
+
+  originalName String
+  uploadedName String
+  fileFormat   String
+  storageType  AssetStorageType
+  relativePath String
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  userProfileAsset    User[]    @relation("UserProfileAsset")
+  companyProfileAsset Company[] @relation("CompanyProfileAsset")
+
+  @@index([deletedAt])
+}
+
+model Role {
+  id String @id @default(uuid())
+
+  companyId   String?
+  name        String
+  description String?
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  company         Company?         @relation(fields: [companyId], references: [id])
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@index([deletedAt])
+}
+
+model Permission {
+  id String @id @default(uuid())
+
+  name     String @unique
+  resource String
+  action   String
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  rolePermissions RolePermission[]
+
+  @@index([deletedAt])
+}
+
+model UserCompany {
+  id String @id @default(uuid())
+
+  userId    String
+  companyId String
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  user    User    @relation(fields: [userId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([deletedAt])
+}
+
+model UserRole {
+  id String @id @default(uuid())
+
+  userId    String
+  companyId String
+  roleId    String
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  user    User    @relation(fields: [userId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+  role    Role    @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, companyId, roleId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([roleId])
+  @@index([deletedAt])
+}
+
+model RolePermission {
+  id String @id @default(uuid())
+
+  roleId       String
+  permissionId String
+
+  createdAt DateTime  @default(now())
+  createdBy String?
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@index([deletedAt])
+}
