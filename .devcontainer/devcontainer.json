@@ -1,0 +1,8 @@
+{
+  "name": "Bun Backend",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "bun install",
+  "forwardPorts": [3000]
+}
