@@ -4,6 +4,15 @@ const db = new PrismaClient({
   log: ["query", "info", "warn", "error"],
 });
 
+db.$connect()
+  .then(() => {
+    console.log("Database connected");
+  })
+  .catch((err) => {
+    console.error("Database connection error:", err);
+    process.exit(1);
+  });
+
 // export const db = basePrisma.$extends({
 //   query: {
 //     $allModels: {
