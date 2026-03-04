@@ -6,6 +6,8 @@ import { env } from "./config/env";
 
 export const app = Fastify({ logger: true });
 
+const swaggerServerURL = env.CODESPACE_URL || env.SERVER_URL;
+
 // Register Swagger
 app.register(swagger, {
   openapi: {
@@ -14,11 +16,7 @@ app.register(swagger, {
       description: "User Management APIs",
       version: "1.0.0",
     },
-    servers: [
-      {
-        url: env.SERVER_URL,
-      },
-    ],
+    servers: [{ url: swaggerServerURL }],
   },
 });
 

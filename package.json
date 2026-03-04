@@ -5,10 +5,8 @@
     "dev": "bun run src/server.ts",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,json}\""
-  },
-  "prisma": {
-    "seed": "bun run prisma/seed.ts"
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "seed": "bun run prisma/seed/index.ts"
   },
   "dependencies": {
     "@fastify/swagger": "8",
@@ -17,6 +15,7 @@
     "bcrypt": "^5.1.0",
     "dotenv": "^17.3.1",
     "fastify": "^4.0.0",
+    "json-schema": "^0.4.0",
     "jsonwebtoken": "^9.0.0",
     "winston": "^3.10.0"
   },

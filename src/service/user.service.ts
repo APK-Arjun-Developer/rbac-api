@@ -12,21 +12,18 @@ export class UserService {
   async getAllUsers() {
     const companies = await userRepository.getAllUsersGroupedByCompany();
 
+    // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
     return companies.map((company) => {
-      const owner =
-        company.userCompanies.find((uc) => uc.user.systemRole.type === SystemRoleType.COMPANY_ADMIN)
-          ?.user ?? null;
-
       const users = company.userCompanies
         .filter((uc) => uc.user.systemRole.type === SystemRoleType.COMPANY_USER)
         .map((uc) => uc.user);
 
       return {
-        id: company.id,
-        name: company.name,
-        profileAsset: company.profileAsset,
-        address: company.address,
-        profile: owner,
+        company: {
+          id: company.id,
+          name: company.name,
+          isActive: company.isActive,
+        },
         users,
       };
     });
@@ -36,6 +33,7 @@ export class UserService {
   /* GET COMPANY USERS                          */
   /* ------------------------------------------ */
   async getCompanyUsers(companyId: string) {
+    // repository now returns { company, users }
     return userRepository.getCompanyUsers(companyId);
   }
 
@@ -54,22 +52,15 @@ export class UserService {
   async createCompanyUser(data: Prisma.UserCreateInput, companyId: string) {
     await this.ensureUniqueFields(data);
 
-    return db.$transaction(async (tx) => {
-      return tx.user.create({
-        data: {
-          ...data,
-          systemRole: {
-            connect: {
-              type: SystemRoleType.COMPANY_USER,
-            },
-          },
-          userCompanies: {
-            create: {
-              companyId,
-            },
-          },
-        },
-      });
+    // delegate actual creation to the repository, which keeps database logic
+    return userRepository.create({
+      ...data,
+      systemRole: {
+        connect: { type: SystemRoleType.COMPANY_USER },
+      },
+      userCompanies: {
+        create: { companyId },
+      },
     });
   }
 

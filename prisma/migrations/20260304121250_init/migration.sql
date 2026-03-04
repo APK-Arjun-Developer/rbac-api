@@ -16,6 +16,16 @@ CREATE TABLE "SystemRole" (
 );
 
 -- CreateTable
+CREATE TABLE "SeedHistory" (
+    "id" UUID NOT NULL,
+    "version" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "executedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SeedHistory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "systemRoleId" TEXT NOT NULL,
@@ -174,6 +184,12 @@ CREATE TABLE "RolePermission" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SystemRole_type_key" ON "SystemRole"("type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SeedHistory_version_key" ON "SeedHistory"("version");
+
+-- CreateIndex
+CREATE INDEX "SeedHistory_version_idx" ON "SeedHistory"("version");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");

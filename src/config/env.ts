@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { get } from "node:http";
 
 dotenv.config();
 
@@ -17,10 +18,20 @@ function getNumber(name: string): number {
   const parsed = Number(value);
 
   if (Number.isNaN(parsed)) {
-    throw new Error(`❌ Environment validation failed: ${name} must be a valid number`);
+    throw new TypeError(`❌ Environment validation failed: ${name} must be a valid number`);
   }
 
   return parsed;
+}
+
+// Detect GitHub Codespace environment
+function getCodespaceURL(): string | null {
+  const hasCodespace = getEnv("HAS_CODE_SPACE") === "true";
+  if (hasCodespace) {
+    const port = getNumber("PORT");
+    return `https://https://cuddly-journey-7vprvrw45jxvcxj54-${port}.app.github.dev`;
+  }
+  return null;
 }
 
 export const env = Object.freeze({
@@ -30,6 +41,7 @@ export const env = Object.freeze({
   HOST: getEnv("HOST"),
   SWAGGER_ROUTE: getEnv("SWAGGER_ROUTE"),
   SERVER_URL: `http://${getEnv("HOST")}:${getNumber("PORT")}`,
+  CODESPACE_URL: getCodespaceURL(),
   SWAGGER_URL: `http://${getEnv("HOST")}:${getNumber("PORT")}/${getEnv("SWAGGER_ROUTE")}`,
 
   // Database configuration

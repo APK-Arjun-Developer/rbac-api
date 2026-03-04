@@ -1,52 +1,40 @@
 import { FastifyInstance } from "fastify";
 import { userController } from "../controller/user.controller";
 import {
+  getAllUsersSchema,
+  getCompanyUsersSchema,
+  getUserByIdSchema,
   createCompanyUserSchema,
   updateUserSchema,
-  idParamSchema,
-  companyParamSchema,
+  deleteUserSchema,
 } from "../schema/user.schema";
 
 export async function userRoutes(fastify: FastifyInstance) {
-  fastify.get("/all", userController.getAllUsers.bind(userController));
-
   fastify.get(
-    "/:id",
-    {
-      schema: idParamSchema,
-    },
-    userController.getById.bind(userController),
+    "/all",
+    { schema: getAllUsersSchema },
+    userController.getAllUsers.bind(userController),
   );
 
   fastify.get(
     "/companies/:companyId",
-    {
-      schema: companyParamSchema,
-    },
+    { schema: getCompanyUsersSchema },
     userController.getCompanyUsers.bind(userController),
   );
 
-  fastify.put(
-    "/:id",
-    {
-      schema: updateUserSchema,
-    },
-    userController.updateUser.bind(userController),
-  );
+  fastify.get("/:id", { schema: getUserByIdSchema }, userController.getById.bind(userController));
+
+  fastify.put("/:id", { schema: updateUserSchema }, userController.updateUser.bind(userController));
 
   fastify.delete(
     "/:id",
-    {
-      schema: idParamSchema,
-    },
+    { schema: deleteUserSchema },
     userController.deleteUser.bind(userController),
   );
 
   fastify.post(
     "/companies/:companyId/users",
-    {
-      schema: createCompanyUserSchema,
-    },
+    { schema: createCompanyUserSchema },
     userController.createCompanyUser.bind(userController),
   );
 }

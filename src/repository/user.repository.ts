@@ -40,12 +40,19 @@ export class UserRepository {
   }
 
   /**
-   * Get users of a specific company
+   * Get users of a specific company along with basic company info
    * @param companyId - ID of the company to fetch users for
-   * @return List of users belonging to the specified company, excluding deleted users
+   * @return object containing the company record and its users
    */
-  async getCompanyUsers(companyId: string): Promise<User[]> {
-    return db.user.findMany({
+  async getCompanyUsers(
+    companyId: string,
+  ): Promise<{ company: { id: string; name: string; isActive: boolean } | null; users: User[] }> {
+    const company = await db.company.findFirst({
+      where: { id: companyId, deletedAt: null },
+      select: { id: true, name: true, isActive: true },
+    });
+
+    const users = await db.user.findMany({
       where: {
         deletedAt: null,
         userCompanies: {
@@ -63,6 +70,8 @@ export class UserRepository {
         },
       },
     });
+
+    return { company, users };
   }
 
   /**
