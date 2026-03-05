@@ -13,22 +13,24 @@ export class UserService {
    * @returns {Array} return[].users - Array of User objects for that company
    */
   async getAllUsers() {
-    const companies = await userRepository.getAllUsersGroupedByCompany();
+    return db.$transaction(async (tx) => {
+      const companies = await userRepository.getAllUsersGroupedByCompany(tx);
 
-    // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
-    return companies.map((company) => {
-      const users = company.userCompanies
-        .filter((uc) => uc.user.systemRole.type === SystemRoleType.COMPANY_USER)
-        .map((uc) => uc.user);
+      // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
+      return companies.map((company) => {
+        const users = company.userCompanies
+          .filter((uc) => uc.user.systemRole.type === SystemRoleType.COMPANY_USER)
+          .map((uc) => uc.user);
 
-      return {
-        company: {
-          id: company.id,
-          name: company.name,
-          isActive: company.isActive,
-        },
-        users,
-      };
+        return {
+          company: {
+            id: company.id,
+            name: company.name,
+            isActive: company.isActive,
+          },
+          users,
+        };
+      });
     });
   }
 
@@ -40,8 +42,9 @@ export class UserService {
    * @returns {Array<User>} return.users - Array of users associated with the company
    */
   async getCompanyUsers(companyId: string) {
-    // repository now returns { company, users }
-    return userRepository.getCompanyUsers(companyId);
+    return db.$transaction(async (tx) => {
+      return userRepository.getCompanyUsers(tx, companyId);
+    });
   }
 
   /**
@@ -50,9 +53,11 @@ export class UserService {
    * @returns {Promise<User>} The user object with all associated data
    */
   async getById(id: string) {
-    const user = await userRepository.getById(id);
-    if (!user) throw new Error("User not found");
-    return user;
+    return db.$transaction(async (tx) => {
+      const user = await userRepository.getById(tx, id);
+      if (!user) throw new Error("User not found");
+      return user;
+    });
   }
 
   /**
@@ -62,17 +67,19 @@ export class UserService {
    * @returns {Promise<User>} The newly created user object
    */
   async createCompanyUser(data: Prisma.UserCreateInput, companyId: string) {
-    await this.ensureUniqueFields(data);
+    return db.$transaction(async (tx) => {
+      await this.ensureUniqueFields(tx, data);
 
-    // delegate actual creation to the repository, which keeps database logic
-    return userRepository.create({
-      ...data,
-      systemRole: {
-        connect: { type: SystemRoleType.COMPANY_USER },
-      },
-      userCompanies: {
-        create: { companyId },
-      },
+      // delegate actual creation to the repository, which keeps database logic
+      return userRepository.create(tx, {
+        ...data,
+        systemRole: {
+          connect: { type: SystemRoleType.COMPANY_USER },
+        },
+        userCompanies: {
+          create: { companyId },
+        },
+      });
     });
   }
 
@@ -93,14 +100,17 @@ export class UserService {
    * @throws {Error} Throws if email, username, or mobile already exists for another user
    */
   async updateUser(id: string, data: Prisma.UserUpdateInput) {
-    if ("password" in data) {
-      throw new Error("Password update not allowed in this method");
-    }
+    return db.$transaction(async (tx) => {
+      if ("password" in data) {
+        throw new Error("Password update not allowed in this method");
+      }
 
-    await this.getById(id);
-    await this.ensureUniqueFields(data, id);
+      const user = await userRepository.getById(tx, id);
+      if (!user) throw new Error("User not found");
+      await this.ensureUniqueFields(tx, data, id);
 
-    return userRepository.update(id, data);
+      return userRepository.update(tx, id, data);
+    });
   }
 
   /**
@@ -110,8 +120,11 @@ export class UserService {
    * @returns {Promise<User>} The soft-deleted user object
    */
   async deleteUser(id: string, deletedBy: string) {
-    await this.getById(id);
-    return userRepository.softDelete(id, deletedBy);
+    return db.$transaction(async (tx) => {
+      const user = await userRepository.getById(tx, id);
+      if (!user) throw new Error("User not found");
+      return userRepository.softDelete(tx, id, deletedBy);
+    });
   }
 
   /**
@@ -124,7 +137,11 @@ export class UserService {
    * @throws {Error} Throws 'Email already exists' if email is taken
    * @throws {Error} Throws 'Mobile already exists' if mobile number is taken
    */
-  private async ensureUniqueFields(data: any, excludeUserId?: string) {
+  private async ensureUniqueFields(
+    db: Prisma.TransactionClient,
+    data: any,
+    excludeUserId?: string,
+  ) {
     const checks = [];
 
     if (data.username) {
