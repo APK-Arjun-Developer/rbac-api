@@ -18,12 +18,14 @@ const errorResponse: JSONSchema7 = {
  * Common schema builder
  */
 const buildSchema = (options: {
+  tags: string[];
   params?: JSONSchema7;
   querystring?: JSONSchema7;
   body?: JSONSchema7;
   response200?: JSONSchema7;
 }): FastifySchema => {
   return {
+    ...(options.tags && { tags: options.tags }),
     ...(options.params && { params: options.params }),
     ...(options.querystring && {
       querystring: options.querystring,

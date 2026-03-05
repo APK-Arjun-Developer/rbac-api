@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { db } from "../../src/config/database.ts";
+import { db } from "../../src/config/database";
 
 async function runSeeds() {
   const seedsDir = path.join(__dirname);

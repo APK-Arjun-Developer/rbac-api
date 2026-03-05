@@ -91,34 +91,42 @@ const allUsersResponse: JSONSchema7 = {
   items: companyUsers,
 };
 
+const tags = ["User"];
+
 /* ---------------- EXPORTS ---------------- */
 
 export const getAllUsersSchema = buildSchema({
+  tags,
   response200: allUsersResponse,
 });
 
 export const getCompanyUsersSchema = buildSchema({
+  tags,
   params: companyParams,
   response200: companyUsers,
 });
 
 export const getUserByIdSchema = buildSchema({
+  tags,
   params: idParams,
   response200: userResponse,
 });
 
 export const createCompanyUserSchema = buildSchema({
+  tags,
   params: companyParams,
   body: createUserBody,
   response200: userResponse,
 });
 
 export const updateUserSchema = buildSchema({
+  tags,
   params: idParams,
   body: updateUserBody,
   response200: userResponse,
 });
 
 export const deleteUserSchema = buildSchema({
+  tags,
   params: idParams,
 });
