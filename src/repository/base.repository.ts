@@ -13,9 +13,7 @@ export abstract class BaseRepository {
   /**
    * Execute logic inside a database transaction.
    */
-  protected async transaction<T>(
-    fn: (tx: Prisma.TransactionClient) => Promise<T>
-  ): Promise<T> {
+  public async transaction<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     try {
       return await this.prisma.$transaction(fn);
     } catch (error) {

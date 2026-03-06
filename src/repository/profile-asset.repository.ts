@@ -1,10 +1,15 @@
-import { Prisma, Asset } from "@prisma/client";
+import { Prisma, Asset, PrismaClient } from "@prisma/client";
+import { BaseRepository } from "./base.repository";
+import { db } from "../config/database";
 
 /**
  * ProfileAssetRepository handles all database operations related to profile assets.
  * @class ProfileAssetRepository
  */
-export class ProfileAssetRepository {
+export class ProfileAssetRepository extends BaseRepository {
+  constructor(prisma: PrismaClient = db) {
+    super(prisma, "ProfileAssetRepository");
+  }
   /**
    * Retrieves a single profile asset by ID.
    * @async
@@ -107,4 +112,4 @@ export class ProfileAssetRepository {
   }
 }
 
-export const profileAssetRepository = new ProfileAssetRepository();
+export const profileAssetRepository = new ProfileAssetRepository(db);

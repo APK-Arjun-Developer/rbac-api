@@ -1,10 +1,15 @@
-import { Prisma, Role } from "@prisma/client";
+import { Prisma, Role, PrismaClient } from "@prisma/client";
+import { BaseRepository } from "./base.repository";
+import { db } from "../config/database";
 
 /**
  * RoleRepository handles all database operations related to roles.
  * @class RoleRepository
  */
-export class RoleRepository {
+export class RoleRepository extends BaseRepository {
+  constructor(prisma: PrismaClient = db) {
+    super(prisma, "RoleRepository");
+  }
   /**
    * Retrieves a single role by ID with all associated relationships.
    * @async
@@ -186,4 +191,4 @@ export class RoleRepository {
   }
 }
 
-export const roleRepository = new RoleRepository();
+export const roleRepository = new RoleRepository(db);

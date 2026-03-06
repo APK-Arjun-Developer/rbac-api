@@ -1,10 +1,15 @@
-import { Prisma, Address } from "@prisma/client";
+import { Prisma, Address, PrismaClient } from "@prisma/client";
+import { BaseRepository } from "./base.repository";
+import { db } from "../config/database";
 
 /**
  * AddressRepository handles all database operations related to addresses.
  * @class AddressRepository
  */
-export class AddressRepository {
+export class AddressRepository extends BaseRepository {
+  constructor(prisma: PrismaClient = db) {
+    super(prisma, "AddressRepository");
+  }
   /**
    * Retrieves a single address by ID.
    * @async
@@ -107,4 +112,4 @@ export class AddressRepository {
   }
 }
 
-export const addressRepository = new AddressRepository();
+export const addressRepository = new AddressRepository(db);

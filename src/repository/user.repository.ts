@@ -1,10 +1,15 @@
-import { Prisma, SystemRoleType, User } from "@prisma/client";
+import { Prisma, SystemRoleType, User, PrismaClient } from "@prisma/client";
+import { BaseRepository } from "./base.repository";
+import { db } from "../config/database";
 
 /**
  * UserRepository handles all database operations related to users.
  * @class UserRepository
  */
-export class UserRepository {
+export class UserRepository extends BaseRepository {
+  constructor(prisma: PrismaClient = db) {
+    super(prisma, "UserRepository");
+  }
   /**
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
@@ -192,62 +197,7 @@ export class UserRepository {
     });
   }
 
-  private fiedsToSelect() {
-    const user = {
-      id: true,
-      addressId: true,
-      profileAssetId: true,
-      isActive: true,
-      systemRoleId: true,
-      username: true,
-      password: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      mobile: true,
-      isEmailVerified: true,
-      isMobileVerified: true,
-    } as const;
-
-    const address = {
-      id: true,
-      line1: true,
-      line2: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      country: true,
-    } as const;
-
-    const profileAsset = {
-      id: true,
-      url: true,
-      type: true,
-    } as const;
-
-    const company = {
-      id: true,
-      name: true,
-      isActive: true,
-      addressId: true,
-      profileAssetId: true,
-    } as const;
-
-    const userCompany = {
-      companyId: true,
-      userId: true,
-      role: true,
-    } as const;
-
-    const userRoles = {
-      id: true,
-      userId: true,
-      roleId: true,
-      companyId: true,
-    } as const;
-
-    return { user, address, profileAsset, company, userCompany, userRoles };
-  }
+  // removed unused helper method and its returned objects
 }
 
-export const userRepository = new UserRepository();
+export const userRepository = new UserRepository(db);

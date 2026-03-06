@@ -1,5 +1,4 @@
 import { Prisma, SystemRoleType } from "@prisma/client";
-import { db } from "../config/database";
 import { userRepository } from "../repository/user.repository";
 
 /**
@@ -13,7 +12,7 @@ export class UserService {
    * @returns {Array} return[].users - Array of User objects for that company
    */
   async getAllUsers() {
-    return db.$transaction(async (tx) => {
+    return userRepository.transaction(async (tx) => {
       const companies = await userRepository.getAllUsersGroupedByCompany(tx);
 
       // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
@@ -42,7 +41,7 @@ export class UserService {
    * @returns {Array<User>} return.users - Array of users associated with the company
    */
   async getCompanyUsers(companyId: string) {
-    return db.$transaction(async (tx) => {
+    return userRepository.transaction(async (tx) => {
       return userRepository.getCompanyUsers(tx, companyId);
     });
   }
@@ -53,7 +52,7 @@ export class UserService {
    * @returns {Promise<User>} The user object with all associated data
    */
   async getById(id: string) {
-    return db.$transaction(async (tx) => {
+    return userRepository.transaction(async (tx) => {
       const user = await userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
       return user;
@@ -67,7 +66,7 @@ export class UserService {
    * @returns {Promise<User>} The newly created user object
    */
   async createCompanyUser(data: Prisma.UserCreateInput, companyId: string) {
-    return db.$transaction(async (tx) => {
+    return userRepository.transaction(async (tx) => {
       await this.ensureUniqueFields(tx, data);
 
       // delegate actual creation to the repository, which keeps database logic
@@ -97,7 +96,7 @@ export class UserService {
    * @throws {Error} Throws if email, username, or mobile already exists for another user
    */
   async updateUser(id: string, data: Prisma.UserUpdateInput) {
-    return db.$transaction(async (tx) => {
+    return userRepository.transaction(async (tx) => {
       if ("password" in data) {
         throw new Error("Password update not allowed in this method");
       }
@@ -117,7 +116,7 @@ export class UserService {
    * @returns {Promise<User>} The soft-deleted user object
    */
   async deleteUser(id: string, deletedBy: string) {
-    return db.$transaction(async (tx) => {
+    return userRepository.transaction(async (tx) => {
       const user = await userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
       return userRepository.softDelete(tx, id, deletedBy);
