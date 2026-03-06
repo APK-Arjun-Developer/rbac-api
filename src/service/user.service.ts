@@ -19,7 +19,7 @@ export class UserService {
       // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
       return companies.map((company) => {
         const users = company.userCompanies
-          .filter((uc) => uc.user.systemRole.type === SystemRoleType.COMPANY_USER)
+          .filter((uc) => uc.user.systemRole === SystemRoleType.COMPANY_USER)
           .map((uc) => uc.user);
 
         return {
@@ -73,9 +73,6 @@ export class UserService {
       // delegate actual creation to the repository, which keeps database logic
       return userRepository.create(tx, {
         ...data,
-        systemRole: {
-          connect: { type: SystemRoleType.COMPANY_USER },
-        },
         userCompanies: {
           create: { companyId },
         },

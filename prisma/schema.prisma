@@ -18,21 +18,11 @@ enum AssetStorageType {
   LOCAL
 }
 
-model SystemRole {
-  id          String         @id @default(uuid())
-  type        SystemRoleType @unique
-  description String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  users User[]
-}
-
 model SeedHistory {
-  id          String   @id @default(uuid()) @db.Uuid
-  version     String   @unique
-  name        String
-  executedAt  DateTime @default(now())
+  id         String   @id @default(uuid()) @db.Uuid
+  version    String   @unique
+  name       String
+  executedAt DateTime @default(now())
 
   @@index([version])
 }
@@ -40,16 +30,16 @@ model SeedHistory {
 model User {
   id String @id @default(uuid())
 
-  systemRoleId   String
   addressId      String
   profileAssetId String?
 
-  username  String  @unique
-  password  String
-  firstName String
-  lastName  String
-  email     String? @unique
-  mobile    String? @unique
+  username   String         @unique
+  password   String
+  firstName  String
+  lastName   String
+  email      String?        @unique
+  mobile     String?        @unique
+  systemRole SystemRoleType @default(COMPANY_USER)
 
   isEmailVerified  Boolean @default(false)
   isMobileVerified Boolean @default(false)
@@ -62,14 +52,12 @@ model User {
   deletedAt DateTime?
   deletedBy String?
 
-  systemRole   SystemRole @relation(fields: [systemRoleId], references: [id])
-  address      Address    @relation(fields: [addressId], references: [id])
-  profileAsset Asset?     @relation("UserProfileAsset", fields: [profileAssetId], references: [id])
+  address      Address @relation(fields: [addressId], references: [id])
+  profileAsset Asset?  @relation("UserProfileAsset", fields: [profileAssetId], references: [id])
 
   userCompanies UserCompany[]
   userRoles     UserRole[]
 
-  @@index([systemRoleId])
   @@index([addressId])
   @@index([profileAssetId])
   @@index([deletedAt])

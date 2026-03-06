@@ -9,11 +9,6 @@ export class UserRepository {
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
    * @returns {Promise<Array>} Array of company objects with nested user data
-   * @returns {Object} return[].id - Company ID
-   * @returns {string} return[].name - Company name
-   * @returns {boolean} return[].isActive - Company active status
-   * @returns {Array} return[].userCompanies - Array of user-company relationships
-   * @returns {Object} return[].userCompanies[].user - User object with systemRole, profileAsset, address
    * @throws Will throw if database query fails
    */
   async getAllUsersGroupedByCompany(db: Prisma.TransactionClient) {
@@ -27,15 +22,12 @@ export class UserRepository {
             deletedAt: null,
             user: {
               deletedAt: null,
-              systemRole: {
-                type: { not: SystemRoleType.SYSTEM_ADMIN },
-              },
+              systemRole: { not: SystemRoleType.SYSTEM_ADMIN },
             },
           },
           include: {
             user: {
               include: {
-                systemRole: true,
                 profileAsset: true,
                 address: true,
               },
@@ -52,11 +44,6 @@ export class UserRepository {
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
    * @param {string} companyId - The unique identifier of the company
    * @returns {Promise<Object>} Object containing company info and users array
-   * @returns {Object|null} return.company - Company details (id, name, isActive) or null if company not found or is deleted
-   * @returns {string} return.company.id - Company ID
-   * @returns {string} return.company.name - Company name
-   * @returns {boolean} return.company.isActive - Company active status
-   * @returns {Array<User>} return.users - Array of User objects with systemRole and company-specific roles
    * @throws Will throw if database query fails
    */
   async getCompanyUsers(
@@ -79,7 +66,6 @@ export class UserRepository {
         },
       },
       include: {
-        systemRole: true,
         userRoles: {
           where: { companyId, deletedAt: null },
           include: { role: true },
@@ -96,21 +82,12 @@ export class UserRepository {
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
    * @param {string} id - The unique identifier of the user
    * @returns {Promise<User|null>} User object with all related data, or null if not found or soft-deleted
-   * @returns {string} return.id - User ID
-   * @returns {string} return.email - User email
-   * @returns {string} return.username - Username
-   * @returns {Object} return.systemRole - System role information
-   * @returns {Object} return.address - Address details
-   * @returns {Object} return.profileAsset - Profile picture/asset
-   * @returns {Array} return.userCompanies - Company associations
-   * @returns {Array} return.userRoles - Role assignments by company
    * @throws Will throw if database query fails
    */
   async getById(db: Prisma.TransactionClient, id: string) {
     return db.user.findFirst({
       where: { id, deletedAt: null },
       include: {
-        systemRole: true,
         address: true,
         profileAsset: true,
         userCompanies: true,
@@ -213,6 +190,63 @@ export class UserRepository {
         deletedBy,
       },
     });
+  }
+
+  private fiedsToSelect() {
+    const user = {
+      id: true,
+      addressId: true,
+      profileAssetId: true,
+      isActive: true,
+      systemRoleId: true,
+      username: true,
+      password: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      mobile: true,
+      isEmailVerified: true,
+      isMobileVerified: true,
+    } as const;
+
+    const address = {
+      id: true,
+      line1: true,
+      line2: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      country: true,
+    } as const;
+
+    const profileAsset = {
+      id: true,
+      url: true,
+      type: true,
+    } as const;
+
+    const company = {
+      id: true,
+      name: true,
+      isActive: true,
+      addressId: true,
+      profileAssetId: true,
+    } as const;
+
+    const userCompany = {
+      companyId: true,
+      userId: true,
+      role: true,
+    } as const;
+
+    const userRoles = {
+      id: true,
+      userId: true,
+      roleId: true,
+      companyId: true,
+    } as const;
+
+    return { user, address, profileAsset, company, userCompany, userRoles };
   }
 }
 
