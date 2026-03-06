@@ -21,4 +21,33 @@ export abstract class BaseRepository {
       throw error;
     }
   }
+
+  public getSelectArgs() {
+    const userFields = this.buildSelect<Prisma.UserSelect>([
+      "id",
+      "addressId",
+      "profileAssetId",
+      "isActive",
+      "username",
+      "password",
+      "firstName",
+      "lastName",
+      "email",
+      "mobile",
+      "isEmailVerified",
+      "isMobileVerified",
+    ]);
+
+    return { userFields };
+  }
+
+  private buildSelect<T extends Record<string, any>>(fields: (keyof T)[]): T {
+    const select = {} as T;
+
+    for (const field of fields) {
+      select[field] = true as T[keyof T];
+    }
+
+    return select;
+  }
 }
