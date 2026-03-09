@@ -1,11 +1,16 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { userService } from "../service/user.service";
+import { UserService } from "../service/user.service";
 
 /**
  * UserController handles HTTP request/response operations for user management endpoints.
  * @class UserController
  */
 export class UserController {
+  private readonly userService: UserService;
+
+  constructor() {
+    this.userService = new UserService();
+  }
   /**
    * Retrieves all users grouped by their associated companies.
    * @async
@@ -14,7 +19,7 @@ export class UserController {
    * @returns {Promise<FastifyReply>} HTTP 200 response with array of companies and their users
    */
   async getAllUsers(_request: FastifyRequest, reply: FastifyReply) {
-    const data = await userService.getAllUsers();
+    const data = await this.userService.getAllUsers();
     return reply.send(data);
   }
 
@@ -31,7 +36,7 @@ export class UserController {
     reply: FastifyReply,
   ) {
     const { companyId } = request.params;
-    const data = await userService.getCompanyUsers(companyId);
+    const data = await this.userService.getCompanyUsers(companyId);
     return reply.send(data);
   }
 
@@ -45,7 +50,7 @@ export class UserController {
    */
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = request.params;
-    const user = await userService.getById(id);
+    const user = await this.userService.getById(id);
     return reply.send(user);
   }
 
@@ -64,7 +69,7 @@ export class UserController {
   ) {
     const { companyId } = request.params;
 
-    const user = await userService.createCompanyUser(request.body as any, companyId);
+    const user = await this.userService.createCompanyUser(request.body as any, companyId);
 
     return reply.code(201).send(user);
   }
@@ -81,7 +86,7 @@ export class UserController {
   async updateUser(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = request.params;
 
-    const user = await userService.updateUser(id, request.body as any);
+    const user = await this.userService.updateUser(id, request.body as any);
 
     return reply.send(user);
   }
@@ -100,7 +105,7 @@ export class UserController {
     // Ideally get from auth middleware
     const deletedBy = "system";
 
-    await userService.deleteUser(id, deletedBy);
+    await this.userService.deleteUser(id, deletedBy);
 
     return reply.code(204).send();
   }

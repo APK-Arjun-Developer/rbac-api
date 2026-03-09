@@ -1,14 +1,13 @@
-import { Prisma, SystemRoleType, User, PrismaClient } from "@prisma/client";
+import { Prisma, SystemRoleType, User } from "@prisma/client";
 import { BaseRepository } from "./base.repository";
-import { db } from "../config/database";
 
 /**
  * UserRepository handles all database operations related to users.
  * @class UserRepository
  */
 export class UserRepository extends BaseRepository {
-  constructor(prisma: PrismaClient = db) {
-    super(prisma, "UserRepository");
+  constructor() {
+    super("UserRepository");
   }
   /**
    * @async
@@ -196,8 +195,4 @@ export class UserRepository extends BaseRepository {
       },
     });
   }
-
-  // removed unused helper method and its returned objects
 }
-
-export const userRepository = new UserRepository(db);

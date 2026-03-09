@@ -1,10 +1,18 @@
 import { Prisma, SystemRoleType } from "@prisma/client";
-import { userRepository } from "../repository/user.repository";
+import { UserRepository } from "../repository/user.repository";
+import { BaseService } from "./base.service";
+import { db } from "../config/database";
 
 /**
  * UserService handles all business logic, validation, and rules for user management.
  */
-export class UserService {
+export class UserService extends BaseService {
+  private readonly userRepository: UserRepository;
+
+  constructor() {
+    super(db, "UserService");
+    this.userRepository = new UserRepository();
+  }
   /**
    * Retrieves all active users grouped by company.
    * @returns {Promise<Array>} Array of objects containing company info and associated users
@@ -12,8 +20,8 @@ export class UserService {
    * @returns {Array} return[].users - Array of User objects for that company
    */
   async getAllUsers() {
-    return userRepository.transaction(async (tx) => {
-      const companies = await userRepository.getAllUsersGroupedByCompany(tx);
+    return this.transaction(async (tx) => {
+      const companies = await this.userRepository.getAllUsersGroupedByCompany(tx);
 
       // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
       return companies.map((company) => {
@@ -41,8 +49,8 @@ export class UserService {
    * @returns {Array<User>} return.users - Array of users associated with the company
    */
   async getCompanyUsers(companyId: string) {
-    return userRepository.transaction(async (tx) => {
-      return userRepository.getCompanyUsers(tx, companyId);
+    return this.transaction(async (tx) => {
+      return this.userRepository.getCompanyUsers(tx, companyId);
     });
   }
 
@@ -52,8 +60,8 @@ export class UserService {
    * @returns {Promise<User>} The user object with all associated data
    */
   async getById(id: string) {
-    return userRepository.transaction(async (tx) => {
-      const user = await userRepository.getById(tx, id);
+    return this.transaction(async (tx) => {
+      const user = await this.userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
       return user;
     });
@@ -66,11 +74,11 @@ export class UserService {
    * @returns {Promise<User>} The newly created user object
    */
   async createCompanyUser(data: Prisma.UserCreateInput, companyId: string) {
-    return userRepository.transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       await this.ensureUniqueFields(tx, data);
 
       // delegate actual creation to the repository, which keeps database logic
-      return userRepository.create(tx, {
+      return this.userRepository.create(tx, {
         ...data,
         userCompanies: {
           create: { companyId },
@@ -96,16 +104,16 @@ export class UserService {
    * @throws {Error} Throws if email, username, or mobile already exists for another user
    */
   async updateUser(id: string, data: Prisma.UserUpdateInput) {
-    return userRepository.transaction(async (tx) => {
+    return this.transaction(async (tx) => {
       if ("password" in data) {
         throw new Error("Password update not allowed in this method");
       }
 
-      const user = await userRepository.getById(tx, id);
+      const user = await this.userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
       await this.ensureUniqueFields(tx, data, id);
 
-      return userRepository.update(tx, id, data);
+      return this.userRepository.update(tx, id, data);
     });
   }
 
@@ -116,10 +124,10 @@ export class UserService {
    * @returns {Promise<User>} The soft-deleted user object
    */
   async deleteUser(id: string, deletedBy: string) {
-    return userRepository.transaction(async (tx) => {
-      const user = await userRepository.getById(tx, id);
+    return this.transaction(async (tx) => {
+      const user = await this.userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
-      return userRepository.softDelete(tx, id, deletedBy);
+      return this.userRepository.softDelete(tx, id, deletedBy);
     });
   }
 
@@ -183,5 +191,3 @@ export class UserService {
     if (mobile) throw new Error("Mobile already exists");
   }
 }
-
-export const userService = new UserService();
