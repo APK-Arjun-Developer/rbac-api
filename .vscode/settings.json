@@ -15,5 +15,6 @@
 
   "typescript.tsdk": "node_modules/typescript/lib",
 
-  "prisma.showPrismaDataPlatformNotification": false
+  "prisma.showPrismaDataPlatformNotification": false,
+  "prisma.pinToPrisma6": true
 }

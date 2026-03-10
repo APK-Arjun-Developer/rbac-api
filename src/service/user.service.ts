@@ -2,6 +2,7 @@ import { Prisma, SystemRoleType } from "@prisma/client";
 import { UserRepository } from "../repository/user.repository";
 import { BaseService } from "./base.service";
 import { db } from "../config/database";
+import { CreateUserPayload, UpdateUserPayload, UniqueUserFields } from "../type/user.type";
 
 /**
  * UserService handles all business logic, validation, and rules for user management.
@@ -69,21 +70,66 @@ export class UserService extends BaseService {
 
   /**
    * Creates a new company user with validation of unique fields.
-   * @param {Prisma.UserCreateInput} data - User creation data (email, username, password, mobile, etc.)
+   * @param {CreateUserPayload} data - User creation data (email, username, password, mobile, etc.)
    * @param {string} companyId - ID of the company the user should be linked to
    * @returns {Promise<User>} The newly created user object
    */
-  async createCompanyUser(data: Prisma.UserCreateInput, companyId: string) {
+  async createCompanyUser(data: CreateUserPayload, companyId: string) {
+    const payload: Prisma.UserCreateInput = {
+      username: data.username,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      mobile: data.mobile,
+      userCompanies: { create: { companyId } },
+      address: { connect: { id: data.addressId } },
+      ...(data.profileAssetId && {
+        profileAsset: { connect: { id: data.profileAssetId } },
+      }),
+    };
     return this.transaction(async (tx) => {
-      await this.ensureUniqueFields(tx, data);
+      await this.ensureUniqueFields(tx, {
+        username: data.username,
+        email: data.email,
+        mobile: data.mobile,
+      });
 
       // delegate actual creation to the repository, which keeps database logic
-      return this.userRepository.create(tx, {
-        ...data,
-        userCompanies: {
-          create: { companyId },
-        },
+      return this.userRepository.create(tx, payload);
+    });
+  }
+
+  /**
+   * Creates a new company admin user with validation of unique fields.
+   * @param {CreateUserPayload} data - User creation data (email, username, password, mobile, etc.)
+   * @param {string} companyId - ID of the company the user should be linked to
+   * @returns {Promise<User>} The newly created user object
+   */
+  async createCompanyAdminUser(data: CreateUserPayload, companyId: string) {
+    const payload: Prisma.UserCreateInput = {
+      username: data.username,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      mobile: data.mobile,
+      systemRole: SystemRoleType.COMPANY_ADMIN,
+      userCompanies: { create: { companyId } },
+      address: { connect: { id: data.addressId } },
+      ...(data.profileAssetId && {
+        profileAsset: { connect: { id: data.profileAssetId } },
+      }),
+    };
+    return this.transaction(async (tx) => {
+      await this.ensureUniqueFields(tx, {
+        username: data.username,
+        email: data.email,
+        mobile: data.mobile,
       });
+
+      // delegate actual creation to the repository, which keeps database logic
+      return this.userRepository.create(tx, payload);
     });
   }
 
@@ -93,7 +139,7 @@ export class UserService extends BaseService {
    * Validates uniqueness of email, username, and mobile if being updated.
    *
    * @param {string} id - The unique identifier of the user to update
-   * @param {Prisma.UserUpdateInput} data - The fields to update (must not include password)
+   * @param {UpdateUserPayload} data - The fields to update (must not include password)
    * @returns {Promise<User>} The updated user object
    *
    * @example
@@ -103,7 +149,7 @@ export class UserService extends BaseService {
    * @throws {Error} Throws if user not found
    * @throws {Error} Throws if email, username, or mobile already exists for another user
    */
-  async updateUser(id: string, data: Prisma.UserUpdateInput) {
+  async updateUser(id: string, data: UpdateUserPayload) {
     return this.transaction(async (tx) => {
       if ("password" in data) {
         throw new Error("Password update not allowed in this method");
@@ -111,9 +157,19 @@ export class UserService extends BaseService {
 
       const user = await this.userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
-      await this.ensureUniqueFields(tx, data, id);
+      const payload: Prisma.UserUpdateInput = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        isActive: data.isActive,
+        ...(data.profileAssetId && {
+          profileAsset: { connect: { id: data.profileAssetId } },
+        }),
+        ...(data.addressId && {
+          address: { connect: { id: data.addressId } },
+        }),
+      };
 
-      return this.userRepository.update(tx, id, data);
+      return this.userRepository.update(tx, id, payload);
     });
   }
 
@@ -143,7 +199,7 @@ export class UserService extends BaseService {
    */
   private async ensureUniqueFields(
     db: Prisma.TransactionClient,
-    data: any,
+    data: UniqueUserFields,
     excludeUserId?: string,
   ) {
     const checks = [];
