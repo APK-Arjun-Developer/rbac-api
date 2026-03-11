@@ -1,7 +1,7 @@
-
-# #DATABASE_URL=postgresql://postgres.zeettyliddsgokdllfoc:@aws-1-ap-northeast-1.pooler.supabase.com:6543/rbac
-# #DATABASE_URL="postgresql://postgres:5m%29bP5Hs%24%22%40@db.zeettyliddsgokdllfoc.supabase.co:6543/rbac?sslmode=require"
-# # Used by Prisma Client (runtime app queries)
-# DATABASE_URL="postgresql://postgres:5m%29bP5Hs%24%22%40@aws-REGION.pooler.supabase.com:6543/rbac?sslmode=require"
-# # Used by Prisma Migrate (DDL, schema changes)
-# DIRECT_URL="postgresql://postgres:5m%29bP5Hs%24%22%40@db.zeettyliddsgokdllfoc.supabase.co:5432/rbac?sslmode=require"
+#Write all repo js docs comments properly and return should be separate return and add lint rule for separate return above line spaces
+Update user should be write like username, email, mobile update each method
+Update roles, and its permissions
+Normal update with profile, address, its basic details
+Add logger for all files
+use exclude field type for all
+All modules types should its own type file

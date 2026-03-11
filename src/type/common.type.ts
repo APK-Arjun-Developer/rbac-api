@@ -1,4 +1,4 @@
-export type ExcludeFields =
+export type TExcludeFields =
   | "createdAt"
   | "createdBy"
   | "updatedAt"

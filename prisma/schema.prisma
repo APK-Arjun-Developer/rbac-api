@@ -139,7 +139,7 @@ model Asset {
 model Role {
   id String @id @default(uuid())
 
-  companyId   String?
+  companyId   String
   name        String
   description String?
 

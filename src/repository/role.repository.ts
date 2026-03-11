@@ -1,14 +1,13 @@
-import { Prisma, Role, PrismaClient } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { BaseRepository } from "./base.repository";
-import { db } from "../config/database";
 
 /**
  * RoleRepository handles all database operations related to roles.
  * @class RoleRepository
  */
 export class RoleRepository extends BaseRepository {
-  constructor(prisma: PrismaClient = db) {
-    super(prisma, "RoleRepository");
+  constructor() {
+    super("RoleRepository");
   }
   /**
    * Retrieves a single role by ID with all associated relationships.
@@ -45,15 +44,17 @@ export class RoleRepository extends BaseRepository {
   }
 
   /**
-   * Retrieves all roles with optional filtering.
+   * Retrieves all roles.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
+   * @param {string} companyId - The company ID to filter roles by
    * @returns {Promise<Role[]>} Array of role objects
    * @throws Will throw if database query fails
    */
-  async getAll(db: Prisma.TransactionClient): Promise<Role[]> {
+  async getAll(db: Prisma.TransactionClient, companyId: string): Promise<Role[]> {
     return db.role.findMany({
       where: {
+        companyId,
         deletedAt: null,
       },
       include: {
@@ -66,6 +67,29 @@ export class RoleRepository extends BaseRepository {
         },
       },
       orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Retrieves all roles with role names.
+   * @async
+   * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
+   * @param {string} companyId - The company ID to filter roles by
+   * @param {string} names - The role names to filter by
+   * @returns {Promise<Role[]>} Array of role objects
+   * @throws Will throw if database query fails
+   */
+  async getByNames(
+    db: Prisma.TransactionClient,
+    companyId: string,
+    names: string[],
+  ): Promise<Role[]> {
+    return db.role.findMany({
+      where: {
+        name: { in: names },
+        companyId,
+        deletedAt: null,
+      },
     });
   }
 
@@ -132,6 +156,22 @@ export class RoleRepository extends BaseRepository {
   }
 
   /**
+   * Creates a new roles in the database.
+   * @async
+   * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
+   * @param {Prisma.RoleCreateManyInput[]} data - Complete role creation data
+   * @returns {Promise<Role[]>} The newly created role objects
+   * @throws Will throw if database operation fails (e.g., unique constraint violation)
+   * @throws Will throw if required fields are missing
+   */
+  async createMany(
+    db: Prisma.TransactionClient,
+    data: Prisma.RoleCreateManyInput[],
+  ): Promise<Role[]> {
+    return db.role.createManyAndReturn({ data });
+  }
+
+  /**
    * Updates role information in the database.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
@@ -190,5 +230,3 @@ export class RoleRepository extends BaseRepository {
     });
   }
 }
-
-export const roleRepository = new RoleRepository(db);

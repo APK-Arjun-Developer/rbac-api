@@ -1,14 +1,13 @@
-import { Prisma, Company, PrismaClient } from "@prisma/client";
+import { Prisma, Company } from "@prisma/client";
 import { BaseRepository } from "./base.repository";
-import { db } from "../config/database";
 
 /**
  * CompanyRepository handles all database operations related to companies.
  * @class CompanyRepository
  */
 export class CompanyRepository extends BaseRepository {
-  constructor(prisma: PrismaClient = db) {
-    super(prisma, "CompanyRepository");
+  constructor() {
+    super("CompanyRepository");
   }
   /**
    * Retrieves a single company by ID with all associated relationships.
@@ -141,5 +140,3 @@ export class CompanyRepository extends BaseRepository {
     });
   }
 }
-
-export const companyRepository = new CompanyRepository(db);

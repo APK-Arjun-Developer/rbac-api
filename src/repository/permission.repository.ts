@@ -1,14 +1,13 @@
-import { Prisma, Permission, PrismaClient } from "@prisma/client";
+import { Prisma, Permission } from "@prisma/client";
 import { BaseRepository } from "./base.repository";
-import { db } from "../config/database";
 
 /**
  * PermissionRepository handles all database operations related to permissions.
  * @class PermissionRepository
  */
 export class PermissionRepository extends BaseRepository {
-  constructor(prisma: PrismaClient = db) {
-    super(prisma, "PermissionRepository");
+  constructor() {
+    super("PermissionRepository");
   }
   /**
    * Retrieves a single permission by ID with all associated relationships.
@@ -143,5 +142,3 @@ export class PermissionRepository extends BaseRepository {
     });
   }
 }
-
-export const permissionRepository = new PermissionRepository(db);

@@ -1,21 +1,20 @@
-import { Prisma, Asset, PrismaClient } from "@prisma/client";
+import { Prisma, Asset } from "@prisma/client";
 import { BaseRepository } from "./base.repository";
-import { db } from "../config/database";
 
 /**
- * ProfileAssetRepository handles all database operations related to profile assets.
- * @class ProfileAssetRepository
+ * AssetRepository handles all database operations related to assets.
+ * @class AssetRepository
  */
-export class ProfileAssetRepository extends BaseRepository {
-  constructor(prisma: PrismaClient = db) {
-    super(prisma, "ProfileAssetRepository");
+export class AssetRepository extends BaseRepository {
+  constructor() {
+    super("AssetRepository");
   }
   /**
-   * Retrieves a single profile asset by ID.
+   * Retrieves a single asset by ID.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
-   * @param {string} id - The unique identifier of the profile asset
-   * @returns {Promise<Asset|null>} Profile asset object if found, null otherwise
+   * @param {string} id - The unique identifier of the asset
+   * @returns {Promise<Asset|null>} Asset object if found, null otherwise
    * @throws Will throw if database query fails
    */
   async getById(db: Prisma.TransactionClient, id: string): Promise<Asset | null> {
@@ -25,10 +24,10 @@ export class ProfileAssetRepository extends BaseRepository {
   }
 
   /**
-   * Retrieves all profile assets with optional filtering.
+   * Retrieves all assets with optional filtering.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
-   * @returns {Promise<Asset[]>} Array of profile asset objects
+   * @returns {Promise<Asset[]>} Array of asset objects
    * @throws Will throw if database query fails
    */
   async getAll(db: Prisma.TransactionClient): Promise<Asset[]> {
@@ -41,11 +40,11 @@ export class ProfileAssetRepository extends BaseRepository {
   }
 
   /**
-   * Creates a new profile asset in the database.
+   * Creates a new asset in the database.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
-   * @param {Prisma.AssetCreateInput} data - Complete profile asset creation data including originalName, uploadedName, fileFormat, etc.
-   * @returns {Promise<Asset>} The newly created profile asset object
+   * @param {Prisma.AssetCreateInput} data - Complete asset creation data including originalName, uploadedName, fileFormat, etc.
+   * @returns {Promise<Asset>} The newly created asset object
    * @throws Will throw if database operation fails (e.g., missing required fields)
    */
   async create(db: Prisma.TransactionClient, data: Prisma.AssetCreateInput): Promise<Asset> {
@@ -53,13 +52,13 @@ export class ProfileAssetRepository extends BaseRepository {
   }
 
   /**
-   * Updates profile asset information in the database.
+   * Updates asset information in the database.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
-   * @param {string} id - The unique identifier of the profile asset to update
+   * @param {string} id - The unique identifier of the asset to update
    * @param {Prisma.AssetUpdateInput} data - Object containing fields to update
-   * @returns {Promise<Asset>} The updated profile asset object
-   * @throws Will throw if profile asset not found
+   * @returns {Promise<Asset>} The updated asset object
+   * @throws Will throw if asset not found
    * @throws Will throw if database operation fails
    */
   async update(
@@ -77,13 +76,13 @@ export class ProfileAssetRepository extends BaseRepository {
   }
 
   /**
-   * Performs a soft delete on a profile asset.
+   * Performs a soft delete on a asset.
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
-   * @param {string} id - The unique identifier of the profile asset to soft-delete
+   * @param {string} id - The unique identifier of the asset to soft-delete
    * @param {string} deletedBy - The ID or identifier of the user/system that initiated the deletion
-   * @returns {Promise<Asset>} The soft-deleted profile asset object with updated deletedAt and deletedBy fields
-   * @throws Will throw if profile asset not found
+   * @returns {Promise<Asset>} The soft-deleted asset object with updated deletedAt and deletedBy fields
+   * @throws Will throw if asset not found
    * @throws Will throw if database operation fails
    */
   async softDelete(db: Prisma.TransactionClient, id: string, deletedBy: string): Promise<Asset> {
@@ -97,12 +96,12 @@ export class ProfileAssetRepository extends BaseRepository {
   }
 
   /**
-   * Permanently deletes a profile asset from the database (hard delete).
+   * Permanently deletes a asset from the database (hard delete).
    * @async
    * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
-   * @param {string} id - The unique identifier of the profile asset to permanently delete
-   * @returns {Promise<Asset>} The deleted profile asset object
-   * @throws Will throw if profile asset not found
+   * @param {string} id - The unique identifier of the asset to permanently delete
+   * @returns {Promise<Asset>} The deleted asset object
+   * @throws Will throw if asset not found
    * @throws Will throw if database operation fails
    */
   async delete(db: Prisma.TransactionClient, id: string): Promise<Asset> {
@@ -111,5 +110,3 @@ export class ProfileAssetRepository extends BaseRepository {
     });
   }
 }
-
-export const profileAssetRepository = new ProfileAssetRepository(db);
