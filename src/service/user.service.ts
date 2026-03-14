@@ -208,9 +208,6 @@ export class UserService extends BaseService {
    * @param {IUpdateUserPayload} data - The fields to update (must not include password)
    * @returns {Promise<User>} The updated user object
    *
-   * @example
-   * const updated = await userService.updateUser('user-123', { email: 'newemail@example.com' });
-   *
    * @throws {Error} Throws 'Password update not allowed in this method' if password is included
    * @throws {Error} Throws if user not found
    * @throws {Error} Throws if email, username, or mobile already exists for another user
@@ -252,6 +249,72 @@ export class UserService extends BaseService {
       const user = await this.userRepository.getById(tx, id);
       if (!user) throw new Error("User not found");
       return this.userRepository.softDelete(tx, id, deletedBy);
+    });
+
+    return res;
+  }
+
+  /**
+   * Updates a unique user field: username, email, or mobile.
+   * Resets verification flags for email and mobile if updated.
+   *
+   * @param {string} id - User ID
+   * @param {Object} fields - Object containing one of the fields to update
+   *  { username?: string, email?: string, mobile?: string }
+   * @returns {Promise<User>} Updated user object
+   * @throws {Error} Throws if user not found or field already exists
+   */
+  async updateUniqueField(
+    id: string,
+    fields: { username?: string; email?: string; mobile?: string },
+  ) {
+    const res = await this.transaction(async (tx) => {
+      // Validate the fields are unique
+      await this.ensureUniqueFields(tx, fields, id);
+
+      const user = await this.userRepository.getById(tx, id);
+      if (!user) throw new Error("User not found");
+
+      // Prepare payload
+      const payload: Prisma.UserUpdateInput = {};
+      if (fields.username) payload.username = fields.username;
+      if (fields.email) {
+        payload.email = fields.email;
+        payload.isEmailVerified = false; // reset email verification
+      }
+      if (fields.mobile) {
+        payload.mobile = fields.mobile;
+        payload.isMobileVerified = false; // reset mobile verification
+      }
+
+      return this.userRepository.update(tx, id, payload);
+    });
+
+    return res;
+  }
+
+  /**
+   * Updates the email and/or mobile verification status for a user.
+   * @param {string} id - User ID
+   * @param {Object} flags - Object containing verification flags to update
+   *  { isEmailVerified?: boolean, isMobileVerified?: boolean }
+   * @returns {Promise<User>} Updated user object
+   * @throws {Error} Throws if user not found
+   */
+  async updateVerificationStatus(
+    id: string,
+    flags: { isEmailVerified?: boolean; isMobileVerified?: boolean },
+  ) {
+    const res = await this.transaction(async (tx) => {
+      const user = await this.userRepository.getById(tx, id);
+      if (!user) throw new Error("User not found");
+
+      const payload: Prisma.UserUpdateInput = {};
+
+      if (flags.isEmailVerified !== undefined) payload.isEmailVerified = flags.isEmailVerified;
+      if (flags.isMobileVerified !== undefined) payload.isMobileVerified = flags.isMobileVerified;
+
+      return this.userRepository.update(tx, id, payload);
     });
 
     return res;
