@@ -1,5 +1,5 @@
 import { Prisma, Asset } from "@prisma/client";
-import { BaseRepository } from "./base.repository";
+import { BaseRepository } from "@repository";
 
 /**
  * AssetRepository handles all database operations related to assets.

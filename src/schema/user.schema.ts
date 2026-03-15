@@ -1,5 +1,5 @@
 import { JSONSchema7 } from "json-schema";
-import { buildSchema } from "./common.schema";
+import { buildSchema } from "@schema";
 
 /* ---------------- PARAMS ---------------- */
 

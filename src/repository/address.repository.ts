@@ -1,5 +1,5 @@
 import { Prisma, Address } from "@prisma/client";
-import { BaseRepository } from "./base.repository";
+import { BaseRepository } from "@repository";
 
 /**
  * AddressRepository handles all database operations related to addresses.

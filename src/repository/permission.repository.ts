@@ -1,5 +1,5 @@
 import { Prisma, Permission } from "@prisma/client";
-import { BaseRepository } from "./base.repository";
+import { BaseRepository } from "@repository";
 
 /**
  * PermissionRepository handles all database operations related to permissions.

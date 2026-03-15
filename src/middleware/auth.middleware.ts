@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
-import { env } from "../config/env";
+import { env } from "@config";
 
 /**
  * Authentication Middleware

@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { UserService } from "../service/user.service";
+import { UserService } from "@service";
 
 /**
  * UserController handles HTTP request/response operations for user management endpoints.

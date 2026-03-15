@@ -1,5 +1,5 @@
 import { Prisma, Company } from "@prisma/client";
-import { BaseRepository } from "./base.repository";
+import { BaseRepository } from "@repository";
 
 /**
  * CompanyRepository handles all database operations related to companies.

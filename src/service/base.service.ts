@@ -1,5 +1,5 @@
 import { PrismaClient, Prisma } from "@prisma/client";
-import { LoggerService } from "./logger.service";
+import { LoggerService } from "@service";
 
 export abstract class BaseService {
   protected readonly db: PrismaClient;

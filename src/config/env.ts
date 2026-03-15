@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import { get } from "node:http";
 
 dotenv.config();
 

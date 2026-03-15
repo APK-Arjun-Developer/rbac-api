@@ -1,17 +1,19 @@
 import { Prisma, SystemRoleType } from "@prisma/client";
-import { UserRepository } from "../repository/user.repository";
-import { BaseService } from "./base.service";
-import { db } from "../config/database";
+import {
+  UserRepository,
+  CompanyRepository,
+  AddressRepository,
+  AssetRepository,
+  RoleRepository,
+} from "@repository";
+import { BaseService } from "@service";
+import { db } from "@config";
 import {
   ICreateUserPayload,
   IUpdateUserPayload,
   IUniqueUserFields,
   ICreateCompanyAdminUserPayload,
-} from "../type/user.type";
-import { CompanyRepository } from "../repository/company.repository";
-import { AssetRepository } from "../repository/asset.repository";
-import { AddressRepository } from "../repository/address.repository";
-import { RoleRepository } from "../repository/role.repository";
+} from "@type";
 
 /**
  * UserService handles all business logic, validation, and rules for user management.

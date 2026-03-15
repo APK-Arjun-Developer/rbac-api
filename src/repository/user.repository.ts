@@ -1,5 +1,5 @@
 import { Prisma, SystemRoleType, User } from "@prisma/client";
-import { BaseRepository } from "./base.repository";
+import { BaseRepository } from "@repository";
 
 /**
  * UserRepository handles all database operations related to users.

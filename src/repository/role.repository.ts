@@ -1,5 +1,5 @@
 import { Prisma, Role } from "@prisma/client";
-import { BaseRepository } from "./base.repository";
+import { BaseRepository } from "@repository";
 
 /**
  * RoleRepository handles all database operations related to roles.

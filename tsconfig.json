@@ -1,9 +1,8 @@
-
 {
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "strict": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
@@ -11,7 +10,18 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": "./src",
+    "paths": {
+      "@config": ["config/index"],
+      "@controller": ["controller/index"],
+      "@middleware": ["middleware/index"],
+      "@repository": ["repository/index"],
+      "@route": ["route/index"],
+      "@schema": ["schema/index"],
+      "@service": ["service/index"],
+      "@type": ["type/index"]
+    }
   },
   "include": ["src"]
 }

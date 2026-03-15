@@ -1,8 +1,8 @@
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
-import { userRoutes } from "./route/user.route";
-import { env } from "./config/env";
+import { userRoutes } from "@route";
+import { env } from "@config";
 
 export const app = Fastify({ logger: true });
 

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { LoggerService } from "../service/logger.service";
+import { LoggerService } from "@service";
 
 type ModelSelectMap = {
   User: Prisma.UserSelect;

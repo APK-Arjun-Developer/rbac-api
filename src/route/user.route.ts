@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { userController } from "../controller/user.controller";
+import { userController } from "@controller";
 import {
   getAllUsersSchema,
   getCompanyUsersSchema,
@@ -7,7 +7,7 @@ import {
   createCompanyUserSchema,
   updateUserSchema,
   deleteUserSchema,
-} from "../schema/user.schema";
+} from "@schema";
 
 export async function userRoutes(fastify: FastifyInstance) {
   fastify.get(
