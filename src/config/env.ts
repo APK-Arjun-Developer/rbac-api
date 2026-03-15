@@ -41,7 +41,7 @@ export const env = Object.freeze({
   SWAGGER_ROUTE: getEnv("SWAGGER_ROUTE"),
   SERVER_URL: `http://${getEnv("HOST")}:${getNumber("PORT")}`,
   CODESPACE_URL: getCodespaceURL(),
-  SWAGGER_URL: `http://${getEnv("HOST")}:${getNumber("PORT")}/${getEnv("SWAGGER_ROUTE")}`,
+  SWAGGER_URL: `http://${getEnv("HOST")}:${getNumber("PORT")}${getEnv("SWAGGER_ROUTE")}`,
 
   // Database configuration
   DATABASE_URL: getEnv("DATABASE_URL"),

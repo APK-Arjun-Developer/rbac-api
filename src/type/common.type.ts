@@ -6,3 +6,7 @@ export type TExcludeFields =
   | "deletedAt"
   | "deletedBy"
   | "password";
+
+export interface IIdParams {
+  id: string;
+}

@@ -6,7 +6,7 @@ import {
   AssetRepository,
   RoleRepository,
 } from "@repository";
-import { BaseService } from "@service";
+import { BaseService, ConflictError, NotFoundError } from "@service";
 import { db } from "@config";
 import {
   ICreateUserPayload,
@@ -86,7 +86,7 @@ export class UserService extends BaseService {
   async getById(id: string) {
     const res = await this.transaction(async (tx) => {
       const user = await this.userRepository.getById(tx, id);
-      if (!user) throw new Error("User not found");
+      if (!user) throw new NotFoundError("User not found");
       return user;
     });
 
@@ -210,18 +210,12 @@ export class UserService extends BaseService {
    * @param {IUpdateUserPayload} data - The fields to update (must not include password)
    * @returns {Promise<User>} The updated user object
    *
-   * @throws {Error} Throws 'Password update not allowed in this method' if password is included
-   * @throws {Error} Throws if user not found
-   * @throws {Error} Throws if email, username, or mobile already exists for another user
+   * @throws {NotFoundError} Throws if user not found
    */
   async updateUser(id: string, data: IUpdateUserPayload) {
     const res = await this.transaction(async (tx) => {
-      if ("password" in data) {
-        throw new Error("Password update not allowed in this method");
-      }
-
       const user = await this.userRepository.getById(tx, id);
-      if (!user) throw new Error("User not found");
+      if (!user) throw new NotFoundError("User not found");
       const payload: Prisma.UserUpdateInput = {
         firstName: data.firstName,
         lastName: data.lastName,
@@ -245,11 +239,12 @@ export class UserService extends BaseService {
    * @param {string} id - The unique identifier of the user to delete
    * @param {string} deletedBy - User ID or identifier of who initiated the deletion (for audit purposes)
    * @returns {Promise<User>} The soft-deleted user object
+   * @throws {NotFoundError} Throws if user not found
    */
   async deleteUser(id: string, deletedBy: string) {
     const res = await this.transaction(async (tx) => {
       const user = await this.userRepository.getById(tx, id);
-      if (!user) throw new Error("User not found");
+      if (!user) throw new NotFoundError("User not found");
       return this.userRepository.softDelete(tx, id, deletedBy);
     });
 
@@ -264,7 +259,8 @@ export class UserService extends BaseService {
    * @param {Object} fields - Object containing one of the fields to update
    *  { username?: string, email?: string, mobile?: string }
    * @returns {Promise<User>} Updated user object
-   * @throws {Error} Throws if user not found or field already exists
+   * @throws {NotFoundError} Throws if user not found
+   * @throws {ConflictError} Throws if field already exists
    */
   async updateUniqueField(
     id: string,
@@ -275,7 +271,7 @@ export class UserService extends BaseService {
       await this.ensureUniqueFields(tx, fields, id);
 
       const user = await this.userRepository.getById(tx, id);
-      if (!user) throw new Error("User not found");
+      if (!user) throw new NotFoundError("User not found");
 
       // Prepare payload
       const payload: Prisma.UserUpdateInput = {};
@@ -301,7 +297,7 @@ export class UserService extends BaseService {
    * @param {Object} flags - Object containing verification flags to update
    *  { isEmailVerified?: boolean, isMobileVerified?: boolean }
    * @returns {Promise<User>} Updated user object
-   * @throws {Error} Throws if user not found
+   * @throws {NotFoundError} Throws if user not found
    */
   async updateVerificationStatus(
     id: string,
@@ -309,7 +305,7 @@ export class UserService extends BaseService {
   ) {
     const res = await this.transaction(async (tx) => {
       const user = await this.userRepository.getById(tx, id);
-      if (!user) throw new Error("User not found");
+      if (!user) throw new NotFoundError("User not found");
 
       const payload: Prisma.UserUpdateInput = {};
 
@@ -328,9 +324,7 @@ export class UserService extends BaseService {
    * @param {Object} data - Object containing optional fields to validate (email, username, mobile)
    * @param {string} [excludeUserId] - Optional user ID to exclude from uniqueness check (for updates)
    * @returns {Promise<void>} Resolves if all checks pass
-   * @throws {Error} Throws 'Username already exists' if username is taken
-   * @throws {Error} Throws 'Email already exists' if email is taken
-   * @throws {Error} Throws 'Mobile already exists' if mobile number is taken
+   * @throws {ConflictError} Throws if any of the fields already exist in another user record
    */
   private async ensureUniqueFields(
     db: Prisma.TransactionClient,
@@ -377,8 +371,8 @@ export class UserService extends BaseService {
 
     const [username, email, mobile] = await Promise.all(checks);
 
-    if (username) throw new Error("Username already exists");
-    if (email) throw new Error("Email already exists");
-    if (mobile) throw new Error("Mobile already exists");
+    if (username) throw new ConflictError("Username already exists");
+    if (email) throw new ConflictError("Email already exists");
+    if (mobile) throw new ConflictError("Mobile already exists");
   }
 }
