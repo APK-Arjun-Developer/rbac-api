@@ -1,7 +1,14 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "@service";
 import { BaseController } from "@controller";
-import { IIdParams } from "@type";
+import {
+  ICreateCompanyAdminUserPayload,
+  ICreateUserPayload,
+  IIdParams,
+  IUniqueUserFields,
+  IUpdateUserPayload,
+  IUpdateVerificationStatusPayload,
+} from "@type";
 
 /**
  * UserController handles HTTP request/response operations for user management endpoints.
@@ -69,10 +76,13 @@ export class UserController extends BaseController {
    * @param {FastifyReply} reply - Fastify reply object for sending response
    * @returns {Promise<FastifyReply>} HTTP 201 response with newly created user data
    */
-  async createCompanyUser(request: FastifyRequest, reply: FastifyReply) {
+  async createCompanyUser(
+    request: FastifyRequest<{ Body: ICreateUserPayload }>,
+    reply: FastifyReply,
+  ) {
     const companyId = "temp-company-id"; // Placeholder until auth middleware provides companyId
     this.controllerAction(async () => {
-      const user = await this.userService.createCompanyUser(request.body as any, companyId);
+      const user = await this.userService.createCompanyUser(request.body, companyId);
       return this.success(reply, user);
     });
   }
@@ -84,9 +94,12 @@ export class UserController extends BaseController {
    * @param {FastifyReply} reply - Fastify reply object
    * @returns {Promise<FastifyReply>} HTTP 201 response with created admin user
    */
-  async createCompanyAdminUser(request: FastifyRequest, reply: FastifyReply) {
+  async createCompanyAdminUser(
+    request: FastifyRequest<{ Body: ICreateCompanyAdminUserPayload }>,
+    reply: FastifyReply,
+  ) {
     this.controllerAction(async () => {
-      const user = await this.userService.createCompanyAdminUser(request.body as any);
+      const user = await this.userService.createCompanyAdminUser(request.body);
       return this.created(reply, user);
     });
   }
@@ -97,10 +110,13 @@ export class UserController extends BaseController {
    * @param {FastifyRequest<{ Params: IIdParams }>} request
    * @param {FastifyReply} reply
    */
-  async updateUniqueField(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
+  async updateUniqueField(
+    request: FastifyRequest<{ Params: IIdParams; Body: IUniqueUserFields }>,
+    reply: FastifyReply,
+  ) {
     const { id } = request.params;
     this.controllerAction(async () => {
-      const user = await this.userService.updateUniqueField(id, request.body as any);
+      const user = await this.userService.updateUniqueField(id, request.body);
       return this.success(reply, user);
     });
   }
@@ -112,12 +128,12 @@ export class UserController extends BaseController {
    * @param {FastifyReply} reply
    */
   async updateVerificationStatus(
-    request: FastifyRequest<{ Params: IIdParams }>,
+    request: FastifyRequest<{ Params: IIdParams; Body: IUpdateVerificationStatusPayload }>,
     reply: FastifyReply,
   ) {
     const { id } = request.params;
     this.controllerAction(async () => {
-      const user = await this.userService.updateVerificationStatus(id, request.body as any);
+      const user = await this.userService.updateVerificationStatus(id, request.body);
       return this.success(reply, user);
     });
   }
@@ -131,10 +147,13 @@ export class UserController extends BaseController {
    * @param {FastifyReply} reply - Fastify reply object for sending response
    * @returns {Promise<FastifyReply>} HTTP 200 response with updated user data
    */
-  async updateUser(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
+  async updateUser(
+    request: FastifyRequest<{ Params: IIdParams; Body: IUpdateUserPayload }>,
+    reply: FastifyReply,
+  ) {
     const { id } = request.params;
     this.controllerAction(async () => {
-      const user = await this.userService.updateUser(id, request.body as any);
+      const user = await this.userService.updateUser(id, request.body);
       return this.success(reply, user);
     });
   }

@@ -20,7 +20,8 @@
       "@route": ["route/index"],
       "@schema": ["schema/index"],
       "@service": ["service/index"],
-      "@type": ["type/index"]
+      "@type": ["type/index"],
+      "@util": ["util/index"]
     }
   },
   "include": ["src"]

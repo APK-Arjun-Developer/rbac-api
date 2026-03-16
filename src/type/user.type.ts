@@ -28,6 +28,11 @@ export interface IUniqueUserFields {
   mobile?: string | null;
 }
 
+export interface IUpdateVerificationStatusPayload {
+  isEmailVerified?: boolean | null;
+  isMobileVerified?: boolean | null;
+}
+
 export interface IGetAllUsers {
   company: {
     id: string;

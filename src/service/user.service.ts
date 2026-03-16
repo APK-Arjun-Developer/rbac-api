@@ -13,7 +13,9 @@ import {
   IUpdateUserPayload,
   IUniqueUserFields,
   ICreateCompanyAdminUserPayload,
+  IUpdateVerificationStatusPayload,
 } from "@type";
+import { isDefined } from "@util";
 
 /**
  * UserService handles all business logic, validation, and rules for user management.
@@ -256,16 +258,13 @@ export class UserService extends BaseService {
    * Resets verification flags for email and mobile if updated.
    *
    * @param {string} id - User ID
-   * @param {Object} fields - Object containing one of the fields to update
+   * @param {IUniqueUserFields} fields - Object containing one of the fields to update
    *  { username?: string, email?: string, mobile?: string }
    * @returns {Promise<User>} Updated user object
    * @throws {NotFoundError} Throws if user not found
    * @throws {ConflictError} Throws if field already exists
    */
-  async updateUniqueField(
-    id: string,
-    fields: { username?: string; email?: string; mobile?: string },
-  ) {
+  async updateUniqueField(id: string, fields: IUniqueUserFields) {
     const res = await this.transaction(async (tx) => {
       // Validate the fields are unique
       await this.ensureUniqueFields(tx, fields, id);
@@ -294,23 +293,20 @@ export class UserService extends BaseService {
   /**
    * Updates the email and/or mobile verification status for a user.
    * @param {string} id - User ID
-   * @param {Object} flags - Object containing verification flags to update
+   * @param {IUpdateVerificationStatusPayload} flags - Object containing verification flags to update
    *  { isEmailVerified?: boolean, isMobileVerified?: boolean }
    * @returns {Promise<User>} Updated user object
    * @throws {NotFoundError} Throws if user not found
    */
-  async updateVerificationStatus(
-    id: string,
-    flags: { isEmailVerified?: boolean; isMobileVerified?: boolean },
-  ) {
+  async updateVerificationStatus(id: string, flags: IUpdateVerificationStatusPayload) {
     const res = await this.transaction(async (tx) => {
       const user = await this.userRepository.getById(tx, id);
       if (!user) throw new NotFoundError("User not found");
 
       const payload: Prisma.UserUpdateInput = {};
 
-      if (flags.isEmailVerified !== undefined) payload.isEmailVerified = flags.isEmailVerified;
-      if (flags.isMobileVerified !== undefined) payload.isMobileVerified = flags.isMobileVerified;
+      if (isDefined(flags.isEmailVerified)) payload.isEmailVerified = flags.isEmailVerified;
+      if (isDefined(flags.isMobileVerified)) payload.isMobileVerified = flags.isMobileVerified;
 
       return this.userRepository.update(tx, id, payload);
     });
