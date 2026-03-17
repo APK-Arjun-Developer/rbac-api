@@ -53,31 +53,51 @@ export class UserRepository extends BaseRepository {
   async getCompanyUsers(
     db: Prisma.TransactionClient,
     companyId: string,
-  ): Promise<{ company: { id: string; name: string; isActive: boolean } | null; users: User[] }> {
+    pagination: { page: number; limit: number },
+  ): Promise<{
+    company: { id: string; name: string; isActive: boolean } | null;
+    users: User[];
+    page: number;
+    limit: number;
+    total: number;
+  }> {
     const company = await db.company.findFirst({
       where: { id: companyId, deletedAt: null },
       select: { id: true, name: true, isActive: true },
     });
 
-    const users = await db.user.findMany({
-      where: {
-        deletedAt: null,
-        userCompanies: {
-          some: {
-            companyId,
-            deletedAt: null,
+    const whereClause: Prisma.UserWhereInput = {
+      deletedAt: null,
+      userCompanies: {
+        some: {
+          companyId,
+          deletedAt: null,
+        },
+      },
+    };
+
+    const [users, total] = await Promise.all([
+      db.user.findMany({
+        where: whereClause,
+        include: {
+          userRoles: {
+            where: { companyId, deletedAt: null },
+            include: { role: true },
           },
         },
-      },
-      include: {
-        userRoles: {
-          where: { companyId, deletedAt: null },
-          include: { role: true },
-        },
-      },
-    });
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      db.user.count({ where: whereClause }),
+    ]);
 
-    return { company, users };
+    return {
+      company,
+      users,
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+    };
   }
 
   /**

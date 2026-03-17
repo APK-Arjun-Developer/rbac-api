@@ -10,3 +10,8 @@ export type TExcludeFields =
 export interface IIdParams {
   id: string;
 }
+
+export interface IPaginationQuery {
+  page?: number;
+  limit?: number;
+}

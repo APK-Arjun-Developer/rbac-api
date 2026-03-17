@@ -1,4 +1,5 @@
 import { Prisma, SystemRoleType } from "@prisma/client";
+import bcrypt from "bcrypt";
 import {
   UserRepository,
   CompanyRepository,
@@ -7,13 +8,14 @@ import {
   RoleRepository,
 } from "@repository";
 import { BaseService, ConflictError, NotFoundError } from "@service";
-import { db } from "@config";
+import { db, env } from "@config";
 import {
   ICreateUserPayload,
   IUpdateUserPayload,
   IUniqueUserFields,
   ICreateCompanyAdminUserPayload,
   IUpdateVerificationStatusPayload,
+  IPaginationQuery,
 } from "@type";
 import { isDefined } from "@util";
 
@@ -41,12 +43,14 @@ export class UserService extends BaseService {
    * @returns {Object} return[].company - Company information (id, name, isActive)
    * @returns {Array} return[].users - Array of User objects for that company
    */
-  async getAllUsers() {
+  async getAllUsers(query: IPaginationQuery = {}) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+
     const res = await this.transaction(async (tx) => {
       const companies = await this.userRepository.getAllUsersGroupedByCompany(tx);
 
-      // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
-      return companies.map((company) => {
+      const allItems = companies.map((company) => {
         const users = company.userCompanies
           .filter((uc) => uc.user.systemRole === SystemRoleType.COMPANY_USER)
           .map((uc) => uc.user);
@@ -60,6 +64,16 @@ export class UserService extends BaseService {
           users,
         };
       });
+
+      const start = (page - 1) * limit;
+      const items = allItems.slice(start, start + limit);
+
+      return {
+        items,
+        page,
+        limit,
+        total: allItems.length,
+      };
     });
 
     return res;
@@ -72,9 +86,12 @@ export class UserService extends BaseService {
    * @returns {Object} return.company - Company details (id, name, isActive) or null if not found
    * @returns {Array<User>} return.users - Array of users associated with the company
    */
-  async getCompanyUsers(companyId: string) {
+  async getCompanyUsers(companyId: string, query: IPaginationQuery = {}) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+
     const res = await this.transaction(async (tx) => {
-      return this.userRepository.getCompanyUsers(tx, companyId);
+      return this.userRepository.getCompanyUsers(tx, companyId, { page, limit });
     });
 
     return res;
@@ -117,7 +134,7 @@ export class UserService extends BaseService {
 
       const userPayload: Prisma.UserCreateInput = {
         username: data.username,
-        password: data.password,
+        password: await bcrypt.hash(data.password, env.SALT_ROUNDS),
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -183,7 +200,7 @@ export class UserService extends BaseService {
 
       const userPayload: Prisma.UserCreateInput = {
         username: user.username,
-        password: user.password,
+        password: await bcrypt.hash(user.password, env.SALT_ROUNDS),
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,

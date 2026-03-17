@@ -5,6 +5,7 @@ import {
   ICreateCompanyAdminUserPayload,
   ICreateUserPayload,
   IIdParams,
+  IPaginationQuery,
   IUniqueUserFields,
   IUpdateUserPayload,
   IUpdateVerificationStatusPayload,
@@ -21,159 +22,98 @@ export class UserController extends BaseController {
     super("UserController");
     this.userService = new UserService();
   }
-  /**
-   * Retrieves all users grouped by their associated companies.
-   * @async
-   * @param {FastifyRequest} _request - Fastify request object (not used for this endpoint)
-   * @param {FastifyReply} reply - Fastify reply object for sending response
-   * @returns {Promise<FastifyReply>} HTTP 200 response with array of companies and their users
-   */
-  async getAllUsers(_request: FastifyRequest, reply: FastifyReply) {
-    this.controllerAction(async () => {
-      const data = await this.userService.getAllUsers();
-      return this.success(reply, data);
-    });
-  }
 
-  /**
-   * Retrieves all users belonging to a specific company.
-   * @async
-   * @param {FastifyRequest} _request - Fastify request with companyId parameter
-   * @param {string} request.params.companyId - The unique identifier of the company
-   * @param {FastifyReply} reply - Fastify reply object for sending response
-   * @returns {Promise<FastifyReply>} HTTP 200 response with company and users data
-   */
-  async getCompanyUsers(_request: FastifyRequest, reply: FastifyReply) {
-    const companyId = "temp-company-id"; // Placeholder until auth middleware provides companyId
-    this.controllerAction(async () => {
-      const data = await this.userService.getCompanyUsers(companyId);
-      return this.success(reply, data);
-    });
-  }
-
-  /**
-   * Retrieves a single user by their unique identifier.
-   * @async
-   * @param {FastifyRequest<{ Params: IIdParams }>} request - Fastify request with user id parameter
-   * @param {string} request.params.id - The unique identifier of the user to retrieve
-   * @param {FastifyReply} reply - Fastify reply object for sending response
-   * @returns {Promise<FastifyReply>} HTTP 200 response with user data
-   */
-  async getById(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
-    const { id } = request.params;
-    this.controllerAction(async () => {
-      const user = await this.userService.getById(id);
-      return this.success(reply, user);
-    });
-  }
-
-  /**
-   * Creates a new company user with validation.
-   * @async
-   * @param {FastifyRequest} request - Fastify request with companyId param and user data in body
-   * @param {string} request.params.companyId - The company to associate the new user with
-   * @param {Object} request.body - User creation data (email, username, password, mobile, etc.)
-   * @param {FastifyReply} reply - Fastify reply object for sending response
-   * @returns {Promise<FastifyReply>} HTTP 201 response with newly created user data
-   */
-  async createCompanyUser(
-    request: FastifyRequest<{ Body: ICreateUserPayload }>,
+  async getAllUsers(
+    request: FastifyRequest<{ Querystring: IPaginationQuery }>,
     reply: FastifyReply,
   ) {
-    const companyId = "temp-company-id"; // Placeholder until auth middleware provides companyId
-    this.controllerAction(async () => {
-      const user = await this.userService.createCompanyUser(request.body, companyId);
-      return this.success(reply, user);
-    });
+    await this.controllerAction(async () => {
+      const data = await this.userService.getAllUsers(request.query);
+      return this.success(reply, data);
+    }, request, reply);
   }
 
-  /**
-   * Creates a new company along with its admin user.
-   * @async
-   * @param {FastifyRequest} request - Fastify request containing company and admin user data in body
-   * @param {FastifyReply} reply - Fastify reply object
-   * @returns {Promise<FastifyReply>} HTTP 201 response with created admin user
-   */
+  async getCompanyUsers(
+    request: FastifyRequest<{ Params: { companyId: string }; Querystring: IPaginationQuery }>,
+    reply: FastifyReply,
+  ) {
+    const { companyId } = request.params;
+
+    await this.controllerAction(async () => {
+      const data = await this.userService.getCompanyUsers(companyId, request.query);
+      return this.success(reply, data);
+    }, request, reply);
+  }
+
+  async getById(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
+    const { id } = request.params;
+    await this.controllerAction(async () => {
+      const user = await this.userService.getById(id);
+      return this.success(reply, user);
+    }, request, reply);
+  }
+
+  async createCompanyUser(
+    request: FastifyRequest<{ Params: { companyId: string }; Body: ICreateUserPayload }>,
+    reply: FastifyReply,
+  ) {
+    const { companyId } = request.params;
+    await this.controllerAction(async () => {
+      const user = await this.userService.createCompanyUser(request.body, companyId);
+      return this.success(reply, user);
+    }, request, reply);
+  }
+
   async createCompanyAdminUser(
     request: FastifyRequest<{ Body: ICreateCompanyAdminUserPayload }>,
     reply: FastifyReply,
   ) {
-    this.controllerAction(async () => {
+    await this.controllerAction(async () => {
       const user = await this.userService.createCompanyAdminUser(request.body);
       return this.created(reply, user);
-    });
+    }, request, reply);
   }
 
-  /**
-   * Updates unique user fields such as username, email, or mobile.
-   * @async
-   * @param {FastifyRequest<{ Params: IIdParams }>} request
-   * @param {FastifyReply} reply
-   */
   async updateUniqueField(
     request: FastifyRequest<{ Params: IIdParams; Body: IUniqueUserFields }>,
     reply: FastifyReply,
   ) {
     const { id } = request.params;
-    this.controllerAction(async () => {
+    await this.controllerAction(async () => {
       const user = await this.userService.updateUniqueField(id, request.body);
       return this.success(reply, user);
-    });
+    }, request, reply);
   }
 
-  /**
-   * Updates email/mobile verification status for a user.
-   * @async
-   * @param {FastifyRequest<{ Params: IIdParams }>} request
-   * @param {FastifyReply} reply
-   */
   async updateVerificationStatus(
     request: FastifyRequest<{ Params: IIdParams; Body: IUpdateVerificationStatusPayload }>,
     reply: FastifyReply,
   ) {
     const { id } = request.params;
-    this.controllerAction(async () => {
+    await this.controllerAction(async () => {
       const user = await this.userService.updateVerificationStatus(id, request.body);
       return this.success(reply, user);
-    });
+    }, request, reply);
   }
 
-  /**
-   * Updates user information (profile, contact details, etc.).
-   * @async
-   * @param {FastifyRequest<{ Params: IIdParams }>} request - Fastify request with user id and update data in body
-   * @param {string} request.params.id - The unique identifier of the user to update
-   * @param {Object} request.body - Partial user data to update the record with
-   * @param {FastifyReply} reply - Fastify reply object for sending response
-   * @returns {Promise<FastifyReply>} HTTP 200 response with updated user data
-   */
   async updateUser(
     request: FastifyRequest<{ Params: IIdParams; Body: IUpdateUserPayload }>,
     reply: FastifyReply,
   ) {
     const { id } = request.params;
-    this.controllerAction(async () => {
+    await this.controllerAction(async () => {
       const user = await this.userService.updateUser(id, request.body);
       return this.success(reply, user);
-    });
+    }, request, reply);
   }
 
-  /**
-   * Soft deletes a user from the system.
-   * @async
-   * @param {FastifyRequest<{ Params: IIdParams }>} request - Fastify request with user id parameter
-   * @param {string} request.params.id - The unique identifier of the user to delete
-   * @param {FastifyReply} reply - Fastify reply object for sending response
-   * @returns {Promise<FastifyReply>} HTTP 204 No Content response on successful deletion
-   */
   async deleteUser(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
     const { id } = request.params;
-    this.controllerAction(async () => {
-      // Ideally get from auth middleware
+    await this.controllerAction(async () => {
       const deletedBy = "system";
       await this.userService.deleteUser(id, deletedBy);
       return this.noContent(reply);
-    });
+    }, request, reply);
   }
 }
 

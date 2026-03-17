@@ -12,22 +12,24 @@ export class BaseController {
     this.logger = new LoggerService(context);
   }
 
-  protected controllerAction(action: ControllerAction) {
-    return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-      try {
-        await action(request, reply);
-      } catch (error) {
-        this.logger.error(`Error in ${this.context}`, error);
+  protected async controllerAction(
+    action: ControllerAction,
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> {
+    try {
+      await action(request, reply);
+    } catch (error) {
+      this.logger.error(`Error in ${this.context}`, error);
 
-        if (error instanceof AppError) {
-          reply.status(error.statusCode).send({
-            message: error.message,
-          });
-          return;
-        }
-        reply.status(500).send({ message: "Internal server error" });
+      if (error instanceof AppError) {
+        reply.status(error.statusCode).send({
+          message: error.message,
+        });
+        return;
       }
-    };
+      reply.status(500).send({ message: "Internal server error" });
+    }
   }
 
   protected success(reply: FastifyReply, data: unknown) {
