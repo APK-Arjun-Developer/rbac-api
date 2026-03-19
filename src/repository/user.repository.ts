@@ -1,5 +1,6 @@
 import { Prisma, SystemRoleType, User } from "@prisma/client";
 import { BaseRepository } from "@repository";
+import { ICompanySummary, ICompanyUsers } from "@type";
 
 /**
  * UserRepository handles all database operations related to users.
@@ -15,31 +16,58 @@ export class UserRepository extends BaseRepository {
    * @returns {Promise<Array>} Array of company objects with nested user data
    * @throws Will throw if database query fails
    */
-  async getAllUsersGroupedByCompany(db: Prisma.TransactionClient) {
-    return db.company.findMany({
-      where: { deletedAt: null },
-      include: {
-        profileAsset: true,
-        address: true,
-        userCompanies: {
-          where: {
-            deletedAt: null,
-            user: {
+  async getAllUsersGroupedByCompany(
+    db: Prisma.TransactionClient,
+    pagination: { skip: number; limit: number },
+  ): Promise<{ items: ICompanyUsers[]; total: number }> {
+    const [total, companies] = await Promise.all([
+      db.company.count({ where: { deletedAt: null } }),
+      db.company.findMany({
+        where: { deletedAt: null },
+        include: {
+          profileAsset: true,
+          address: true,
+          userCompanies: {
+            where: {
               deletedAt: null,
-              systemRole: { not: SystemRoleType.SYSTEM_ADMIN },
+              user: {
+                deletedAt: null,
+                systemRole: { not: SystemRoleType.SYSTEM_ADMIN },
+              },
             },
-          },
-          include: {
-            user: {
-              include: {
-                profileAsset: true,
-                address: true,
+            include: {
+              user: {
+                include: {
+                  profileAsset: true,
+                  address: true,
+                },
               },
             },
           },
         },
-      },
+        skip: pagination.skip,
+        take: pagination.limit,
+      }),
+    ]);
+
+    const items = companies.map((company) => {
+      const users = company.userCompanies
+        .filter((uc) => uc.user.systemRole === SystemRoleType.COMPANY_USER)
+        .map((uc) => uc.user);
+
+      const companySummary: ICompanySummary = {
+        id: company.id,
+        name: company.name,
+        isActive: company.isActive,
+      };
+
+      return {
+        company: companySummary,
+        users,
+      };
     });
+
+    return { items, total };
   }
 
   /**
@@ -53,31 +81,46 @@ export class UserRepository extends BaseRepository {
   async getCompanyUsers(
     db: Prisma.TransactionClient,
     companyId: string,
-  ): Promise<{ company: { id: string; name: string; isActive: boolean } | null; users: User[] }> {
-    const company = await db.company.findFirst({
-      where: { id: companyId, deletedAt: null },
-      select: { id: true, name: true, isActive: true },
-    });
-
-    const users = await db.user.findMany({
-      where: {
-        deletedAt: null,
-        userCompanies: {
-          some: {
-            companyId,
-            deletedAt: null,
+    pagination: { skip: number; limit: number },
+  ): Promise<{ company: ICompanySummary | null; users: User[]; total: number }> {
+    const [company, total, users] = await Promise.all([
+      db.company.findFirst({
+        where: { id: companyId, deletedAt: null },
+        select: { id: true, name: true, isActive: true },
+      }),
+      db.user.count({
+        where: {
+          deletedAt: null,
+          userCompanies: {
+            some: {
+              companyId,
+              deletedAt: null,
+            },
           },
         },
-      },
-      include: {
-        userRoles: {
-          where: { companyId, deletedAt: null },
-          include: { role: true },
+      }),
+      db.user.findMany({
+        where: {
+          deletedAt: null,
+          userCompanies: {
+            some: {
+              companyId,
+              deletedAt: null,
+            },
+          },
         },
-      },
-    });
+        include: {
+          userRoles: {
+            where: { companyId, deletedAt: null },
+            include: { role: true },
+          },
+        },
+        skip: pagination.skip,
+        take: pagination.limit,
+      }),
+    ]);
 
-    return { company, users };
+    return { company, users, total };
   }
 
   /**
@@ -158,7 +201,6 @@ export class UserRepository extends BaseRepository {
   /**
    * Updates user information in the database.
    * @async
-   * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
    * @param {string} id - The unique identifier of the user to update
    * @param {Prisma.UserUpdateInput} data - Object containing fields to update
    * @returns {Promise<User>} The updated user object
@@ -179,7 +221,6 @@ export class UserRepository extends BaseRepository {
   /**
    * Performs a soft delete on a user.
    * @async
-   * @param {Prisma.TransactionClient} db - The database transaction client to use for the operation
    * @param {string} id - The unique identifier of the user to soft-delete
    * @param {string} deletedBy - The ID or identifier of the user/system that initiated the deletion (audit trail)
    * @returns {Promise<User>} The soft-deleted user object with updated deletedAt and deletedBy fields

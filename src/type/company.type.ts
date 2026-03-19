@@ -8,6 +8,7 @@ import {
 } from "@type";
 
 export type ICompany = Omit<Company, TExcludeFields>;
+export type ICompanySummary = Pick<ICompany, "id" | "name" | "isActive">;
 
 export interface ICreateCompanyPayload {
   address: IAddressPayload;

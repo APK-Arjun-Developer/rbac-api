@@ -1,5 +1,11 @@
 import { User } from "@prisma/client";
-import { IAddressPayload, IAssetPayload, TExcludeFields } from "@type";
+import {
+  IAddressPayload,
+  IAssetPayload,
+  ICompanySummary,
+  IPaginatedResponse,
+  TExcludeFields,
+} from "@type";
 
 export type IUser = Omit<User, TExcludeFields>;
 
@@ -33,11 +39,10 @@ export interface IUpdateVerificationStatusPayload {
   isMobileVerified?: boolean | null;
 }
 
-export interface IGetAllUsers {
-  company: {
-    id: string;
-    name: string;
-    isActive: boolean;
-  };
+export interface ICompanyUsers {
+  company: ICompanySummary | null;
   users: IUser[];
 }
+
+export type IGetAllUsers = ICompanyUsers;
+export type IPaginatedCompanyUsers = IPaginatedResponse<ICompanyUsers>;

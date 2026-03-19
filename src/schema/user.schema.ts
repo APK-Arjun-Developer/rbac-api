@@ -1,5 +1,5 @@
 import { JSONSchema7 } from "json-schema";
-import { buildSchema } from "@schema";
+import { buildPaginatedResponseSchema, buildSchema, paginationQuerySchema } from "@schema";
 
 /* ---------------- PARAMS ---------------- */
 
@@ -30,7 +30,7 @@ const createUserBody: JSONSchema7 = {
     firstName: { type: "string", minLength: 1 },
     lastName: { type: "string", minLength: 1 },
     email: { type: "string", format: "email" },
-    mobile: { type: "string", minLength: 10 },
+    mobile: { type: "string", minLength: 10, maxLength: 10 },
     addressId: { type: "string", format: "uuid" },
   },
   additionalProperties: false,
@@ -43,7 +43,7 @@ const updateUserBody: JSONSchema7 = {
     firstName: { type: "string" },
     lastName: { type: "string" },
     email: { type: "string", format: "email" },
-    mobile: { type: "string" },
+    mobile: { type: "string", minLength: 10, maxLength: 10 },
     isActive: { type: "boolean" },
   },
   additionalProperties: false,
@@ -86,10 +86,7 @@ const companyUsers: JSONSchema7 = {
   required: ["company", "users"],
 };
 
-const allUsersResponse: JSONSchema7 = {
-  type: "array",
-  items: companyUsers,
-};
+const paginatedCompanyUsersResponse = buildPaginatedResponseSchema(companyUsers);
 
 const tags = ["User"];
 
@@ -97,13 +94,15 @@ const tags = ["User"];
 
 export const getAllUsersSchema = buildSchema({
   tags,
-  response200: allUsersResponse,
+  querystring: paginationQuerySchema,
+  response200: paginatedCompanyUsersResponse,
 });
 
 export const getCompanyUsersSchema = buildSchema({
   tags,
   params: companyParams,
-  response200: companyUsers,
+  querystring: paginationQuerySchema,
+  response200: paginatedCompanyUsersResponse,
 });
 
 export const getUserByIdSchema = buildSchema({

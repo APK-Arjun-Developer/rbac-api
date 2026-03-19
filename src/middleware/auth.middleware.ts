@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import { env } from "@config";
+import { IAuthenticatedRequest, IJwtPayload } from "@type";
 
 /**
  * Authentication Middleware
@@ -17,8 +18,8 @@ export async function authMiddleware(req: FastifyRequest, res: FastifyReply) {
 
   const token = auth.split(" ")[1];
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-    (req as any).user = decoded;
+    const decoded = jwt.verify(token, env.JWT_SECRET) as IJwtPayload;
+    (req as IAuthenticatedRequest).user = decoded;
   } catch {
     return res.status(401).send({ message: "Invalid token" });
   }

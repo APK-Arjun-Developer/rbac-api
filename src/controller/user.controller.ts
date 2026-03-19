@@ -5,6 +5,7 @@ import {
   ICreateCompanyAdminUserPayload,
   ICreateUserPayload,
   IIdParams,
+  IPaginationQuery,
   IUniqueUserFields,
   IUpdateUserPayload,
   IUpdateVerificationStatusPayload,
@@ -28,9 +29,9 @@ export class UserController extends BaseController {
    * @param {FastifyReply} reply - Fastify reply object for sending response
    * @returns {Promise<FastifyReply>} HTTP 200 response with array of companies and their users
    */
-  async getAllUsers(_request: FastifyRequest, reply: FastifyReply) {
+  async getAllUsers(request: FastifyRequest<{ Querystring: IPaginationQuery }>, reply: FastifyReply) {
     this.controllerAction(async () => {
-      const data = await this.userService.getAllUsers();
+      const data = await this.userService.getAllUsers(request.query);
       return this.success(reply, data);
     });
   }
@@ -43,10 +44,13 @@ export class UserController extends BaseController {
    * @param {FastifyReply} reply - Fastify reply object for sending response
    * @returns {Promise<FastifyReply>} HTTP 200 response with company and users data
    */
-  async getCompanyUsers(_request: FastifyRequest, reply: FastifyReply) {
-    const companyId = "temp-company-id"; // Placeholder until auth middleware provides companyId
+  async getCompanyUsers(
+    request: FastifyRequest<{ Params: { companyId: string }; Querystring: IPaginationQuery }>,
+    reply: FastifyReply,
+  ) {
+    const { companyId } = request.params;
     this.controllerAction(async () => {
-      const data = await this.userService.getCompanyUsers(companyId);
+      const data = await this.userService.getCompanyUsers(companyId, request.query);
       return this.success(reply, data);
     });
   }
@@ -77,10 +81,10 @@ export class UserController extends BaseController {
    * @returns {Promise<FastifyReply>} HTTP 201 response with newly created user data
    */
   async createCompanyUser(
-    request: FastifyRequest<{ Body: ICreateUserPayload }>,
+    request: FastifyRequest<{ Params: { companyId: string }; Body: ICreateUserPayload }>,
     reply: FastifyReply,
   ) {
-    const companyId = "temp-company-id"; // Placeholder until auth middleware provides companyId
+    const { companyId } = request.params;
     this.controllerAction(async () => {
       const user = await this.userService.createCompanyUser(request.body, companyId);
       return this.success(reply, user);

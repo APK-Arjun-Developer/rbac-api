@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from "@prisma/client";
+import { IPaginationQuery } from "@type";
 import { LoggerService } from "@service";
 
 export abstract class BaseService {
@@ -8,6 +9,17 @@ export abstract class BaseService {
   constructor(prisma: PrismaClient, context: string) {
     this.db = prisma;
     this.logger = new LoggerService(context);
+  }
+
+  protected extractPagination(query: IPaginationQuery = {}) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+
+    return {
+      page,
+      limit,
+      skip: (page - 1) * limit,
+    };
   }
 
   /**

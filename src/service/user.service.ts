@@ -14,6 +14,8 @@ import {
   IUniqueUserFields,
   ICreateCompanyAdminUserPayload,
   IUpdateVerificationStatusPayload,
+  IPaginatedCompanyUsers,
+  IPaginationQuery,
 } from "@type";
 import { isDefined } from "@util";
 
@@ -41,28 +43,22 @@ export class UserService extends BaseService {
    * @returns {Object} return[].company - Company information (id, name, isActive)
    * @returns {Array} return[].users - Array of User objects for that company
    */
-  async getAllUsers() {
-    const res = await this.transaction(async (tx) => {
-      const companies = await this.userRepository.getAllUsersGroupedByCompany(tx);
+  async getAllUsers(query: IPaginationQuery = {}): Promise<IPaginatedCompanyUsers> {
+    const pagination = this.extractPagination(query);
 
-      // transform into schema-defined shape: { company: {id,name,isActive}, users: User[] }
-      return companies.map((company) => {
-        const users = company.userCompanies
-          .filter((uc) => uc.user.systemRole === SystemRoleType.COMPANY_USER)
-          .map((uc) => uc.user);
+    return this.transaction(async (tx) => {
+      const { items, total } = await this.userRepository.getAllUsersGroupedByCompany(tx, pagination);
 
-        return {
-          company: {
-            id: company.id,
-            name: company.name,
-            isActive: company.isActive,
-          },
-          users,
-        };
-      });
+      return {
+        items,
+        meta: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total,
+          totalPages: Math.ceil(total / pagination.limit),
+        },
+      };
     });
-
-    return res;
   }
 
   /**
@@ -72,12 +68,31 @@ export class UserService extends BaseService {
    * @returns {Object} return.company - Company details (id, name, isActive) or null if not found
    * @returns {Array<User>} return.users - Array of users associated with the company
    */
-  async getCompanyUsers(companyId: string) {
-    const res = await this.transaction(async (tx) => {
-      return this.userRepository.getCompanyUsers(tx, companyId);
-    });
+  async getCompanyUsers(
+    companyId: string,
+    query: IPaginationQuery = {},
+  ): Promise<IPaginatedCompanyUsers> {
+    const pagination = this.extractPagination(query);
 
-    return res;
+    return this.transaction(async (tx) => {
+      const { company, users, total } = await this.userRepository.getCompanyUsers(
+        tx,
+        companyId,
+        pagination,
+      );
+
+      if (!company) throw new NotFoundError("Company not found");
+
+      return {
+        items: [{ company, users }],
+        meta: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total,
+          totalPages: Math.ceil(total / pagination.limit),
+        },
+      };
+    });
   }
 
   /**
@@ -129,7 +144,6 @@ export class UserService extends BaseService {
         }),
       };
 
-      // delegate actual creation to the repository, which keeps database logic
       return this.userRepository.create(tx, userPayload);
     });
 
@@ -196,7 +210,6 @@ export class UserService extends BaseService {
         }),
       };
 
-      // delegate actual creation to the repository, which keeps database logic
       return this.userRepository.create(tx, userPayload);
     });
 
@@ -258,117 +271,83 @@ export class UserService extends BaseService {
    * Resets verification flags for email and mobile if updated.
    *
    * @param {string} id - User ID
-   * @param {IUniqueUserFields} fields - Object containing one of the fields to update
-   *  { username?: string, email?: string, mobile?: string }
-   * @returns {Promise<User>} Updated user object
-   * @throws {NotFoundError} Throws if user not found
-   * @throws {ConflictError} Throws if field already exists
+   * @param {IUniqueUserFields} data - Fields to update
+   * @returns {Promise<User>} Updated user
    */
-  async updateUniqueField(id: string, fields: IUniqueUserFields) {
-    const res = await this.transaction(async (tx) => {
-      // Validate the fields are unique
-      await this.ensureUniqueFields(tx, fields, id);
-
+  async updateUniqueField(id: string, data: IUniqueUserFields) {
+    return this.transaction(async (tx) => {
       const user = await this.userRepository.getById(tx, id);
       if (!user) throw new NotFoundError("User not found");
 
-      // Prepare payload
       const payload: Prisma.UserUpdateInput = {};
-      if (fields.username) payload.username = fields.username;
-      if (fields.email) {
-        payload.email = fields.email;
-        payload.isEmailVerified = false; // reset email verification
-      }
-      if (fields.mobile) {
-        payload.mobile = fields.mobile;
-        payload.isMobileVerified = false; // reset mobile verification
+      const verificationStatusPayload: IUpdateVerificationStatusPayload = {};
+
+      if (isDefined(data.username) && data.username !== user.username) {
+        const existing = await this.userRepository.getByUsername(tx, data.username);
+        if (existing) throw new ConflictError("Username already exists");
+        payload.username = data.username;
       }
 
-      return this.userRepository.update(tx, id, payload);
+      if (isDefined(data.email) && data.email !== user.email) {
+        if (data.email) {
+          const existing = await this.userRepository.getByEmail(tx, data.email);
+          if (existing) throw new ConflictError("Email already exists");
+        }
+        payload.email = data.email;
+        verificationStatusPayload.isEmailVerified = false;
+      }
+
+      if (isDefined(data.mobile) && data.mobile !== user.mobile) {
+        if (data.mobile) {
+          const existing = await this.userRepository.getByMobile(tx, data.mobile);
+          if (existing) throw new ConflictError("Mobile already exists");
+        }
+        payload.mobile = data.mobile;
+        verificationStatusPayload.isMobileVerified = false;
+      }
+
+      return this.userRepository.update(tx, id, {
+        ...payload,
+        ...verificationStatusPayload,
+      });
     });
-
-    return res;
   }
 
   /**
-   * Updates the email and/or mobile verification status for a user.
+   * Updates user verification flags.
+   *
    * @param {string} id - User ID
-   * @param {IUpdateVerificationStatusPayload} flags - Object containing verification flags to update
-   *  { isEmailVerified?: boolean, isMobileVerified?: boolean }
-   * @returns {Promise<User>} Updated user object
-   * @throws {NotFoundError} Throws if user not found
+   * @param {IUpdateVerificationStatusPayload} data - Verification status payload
+   * @returns {Promise<User>} Updated user
    */
-  async updateVerificationStatus(id: string, flags: IUpdateVerificationStatusPayload) {
-    const res = await this.transaction(async (tx) => {
+  async updateVerificationStatus(id: string, data: IUpdateVerificationStatusPayload) {
+    return this.transaction(async (tx) => {
       const user = await this.userRepository.getById(tx, id);
       if (!user) throw new NotFoundError("User not found");
 
-      const payload: Prisma.UserUpdateInput = {};
-
-      if (isDefined(flags.isEmailVerified)) payload.isEmailVerified = flags.isEmailVerified;
-      if (isDefined(flags.isMobileVerified)) payload.isMobileVerified = flags.isMobileVerified;
-
-      return this.userRepository.update(tx, id, payload);
+      return this.userRepository.update(tx, id, data);
     });
-
-    return res;
   }
 
-  /**
-   * Private method that validates uniqueness of critical user fields.
-   * @private
-   * @param {Object} data - Object containing optional fields to validate (email, username, mobile)
-   * @param {string} [excludeUserId] - Optional user ID to exclude from uniqueness check (for updates)
-   * @returns {Promise<void>} Resolves if all checks pass
-   * @throws {ConflictError} Throws if any of the fields already exist in another user record
-   */
   private async ensureUniqueFields(
-    db: Prisma.TransactionClient,
-    data: IUniqueUserFields,
-    excludeUserId?: string,
-  ) {
-    const checks = [];
+    tx: Prisma.TransactionClient,
+    fields: IUniqueUserFields,
+  ): Promise<void> {
+    const { username, email, mobile } = fields;
 
-    if (data.username) {
-      checks.push(
-        db.user.findFirst({
-          where: {
-            username: data.username,
-            id: { not: excludeUserId },
-            deletedAt: null,
-          },
-        }),
-      );
+    if (username) {
+      const existing = await this.userRepository.getByUsername(tx, username);
+      if (existing) throw new ConflictError("Username already exists");
     }
 
-    if (data.email) {
-      checks.push(
-        db.user.findFirst({
-          where: {
-            email: data.email,
-            id: { not: excludeUserId },
-            deletedAt: null,
-          },
-        }),
-      );
+    if (email) {
+      const existing = await this.userRepository.getByEmail(tx, email);
+      if (existing) throw new ConflictError("Email already exists");
     }
 
-    if (data.mobile) {
-      checks.push(
-        db.user.findFirst({
-          where: {
-            mobile: data.mobile,
-            id: { not: excludeUserId },
-            deletedAt: null,
-          },
-        }),
-      );
+    if (mobile) {
+      const existing = await this.userRepository.getByMobile(tx, mobile);
+      if (existing) throw new ConflictError("Mobile already exists");
     }
-
-    const [username, email, mobile] = await Promise.all(checks);
-
-    if (username) throw new ConflictError("Username already exists");
-    if (email) throw new ConflictError("Email already exists");
-    if (mobile) throw new ConflictError("Mobile already exists");
   }
 }
