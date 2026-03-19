@@ -1,3 +1,4 @@
+export * from "./auth.type";
 export * from "./address.type";
 export * from "./asset.type";
 export * from "./company.type";

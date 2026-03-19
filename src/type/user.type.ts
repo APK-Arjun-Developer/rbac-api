@@ -1,43 +1,25 @@
+import type { z } from "zod";
 import { User } from "@prisma/client";
-import { IAddressPayload, IAssetPayload, TExcludeFields } from "@type";
+import {
+  allUsersResponseSchema,
+  createUserBodySchema,
+  uniqueFieldBodySchema,
+  updateUserBodySchema,
+  userResponseSchema,
+  verificationBodySchema,
+} from "@schema";
+import { TExcludeFields } from "@type";
 
 export type IUser = Omit<User, TExcludeFields>;
 
-export interface ICreateUserPayload {
-  address: IAddressPayload;
-  profileAsset: IAssetPayload | null;
-  username: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  mobile: string | null;
-}
+export type ICreateUserPayload = z.infer<typeof createUserBodySchema>;
 
-export interface IUpdateUserPayload {
-  addressId?: string;
-  profileAssetId?: string | null;
-  firstName?: string;
-  lastName?: string;
-  isActive?: boolean;
-}
+export type IUpdateUserPayload = z.infer<typeof updateUserBodySchema>;
 
-export interface IUniqueUserFields {
-  username?: string;
-  email?: string | null;
-  mobile?: string | null;
-}
+export type IUniqueUserFields = z.infer<typeof uniqueFieldBodySchema>;
 
-export interface IUpdateVerificationStatusPayload {
-  isEmailVerified?: boolean | null;
-  isMobileVerified?: boolean | null;
-}
+export type IUpdateVerificationStatusPayload = z.infer<typeof verificationBodySchema>;
 
-export interface IGetAllUsers {
-  company: {
-    id: string;
-    name: string;
-    isActive: boolean;
-  };
-  users: IUser[];
-}
+export type IUserResponse = z.infer<typeof userResponseSchema>;
+
+export type IGetAllUsers = z.infer<typeof allUsersResponseSchema>;

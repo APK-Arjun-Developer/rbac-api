@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { Prisma, SystemRoleType } from "@prisma/client";
 import {
   UserRepository,
@@ -7,7 +8,7 @@ import {
   RoleRepository,
 } from "@repository";
 import { BaseService, ConflictError, NotFoundError } from "@service";
-import { db } from "@config";
+import { db, env } from "@config";
 import {
   ICreateUserPayload,
   IUpdateUserPayload,
@@ -115,9 +116,11 @@ export class UserService extends BaseService {
         profileAsset = await this.assetRepository.create(tx, data.profileAsset);
       }
 
+      const hashedPassword = await bcrypt.hash(data.password, env.SALT_ROUNDS);
+
       const userPayload: Prisma.UserCreateInput = {
         username: data.username,
-        password: data.password,
+        password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -181,9 +184,11 @@ export class UserService extends BaseService {
         userProfileAsset = await this.assetRepository.create(tx, user.profileAsset);
       }
 
+      const hashedPassword = await bcrypt.hash(user.password, env.SALT_ROUNDS);
+
       const userPayload: Prisma.UserCreateInput = {
         username: user.username,
-        password: user.password,
+        password: hashedPassword,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
