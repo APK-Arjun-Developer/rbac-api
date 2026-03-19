@@ -5,7 +5,10 @@ import {
   getCompanyUsersSchema,
   getUserByIdSchema,
   createCompanyUserSchema,
+  createCompanyAdminUserSchema,
   updateUserSchema,
+  updateUniqueFieldSchema,
+  updateVerificationStatusSchema,
   deleteUserSchema,
 } from "@schema";
 
@@ -17,24 +20,46 @@ export async function userRoutes(fastify: FastifyInstance) {
   );
 
   fastify.get(
-    "/companies/:companyId",
+    "/company-users",
     { schema: getCompanyUsersSchema },
     userController.getCompanyUsers.bind(userController),
   );
 
   fastify.get("/:id", { schema: getUserByIdSchema }, userController.getById.bind(userController));
 
-  fastify.put("/:id", { schema: updateUserSchema }, userController.updateUser.bind(userController));
+  fastify.post(
+    "/company-user",
+    { schema: createCompanyUserSchema },
+    userController.createCompanyUser.bind(userController),
+  );
+
+  fastify.post(
+    "/company-admin",
+    { schema: createCompanyAdminUserSchema },
+    userController.createCompanyAdminUser.bind(userController),
+  );
+
+  fastify.patch(
+    "/:id",
+    { schema: updateUserSchema },
+    userController.updateUser.bind(userController),
+  );
+
+  fastify.patch(
+    "/:id/unique",
+    { schema: updateUniqueFieldSchema },
+    userController.updateUniqueField.bind(userController),
+  );
+
+  fastify.patch(
+    "/:id/verification",
+    { schema: updateVerificationStatusSchema },
+    userController.updateVerificationStatus.bind(userController),
+  );
 
   fastify.delete(
     "/:id",
     { schema: deleteUserSchema },
     userController.deleteUser.bind(userController),
-  );
-
-  fastify.post(
-    "/companies/:companyId/users",
-    { schema: createCompanyUserSchema },
-    userController.createCompanyUser.bind(userController),
   );
 }

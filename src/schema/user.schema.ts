@@ -1,15 +1,7 @@
 import { JSONSchema7 } from "json-schema";
-import { buildSchema } from "@schema";
+import { buildSchema, idParams } from "@schema";
 
 /* ---------------- PARAMS ---------------- */
-
-const idParams: JSONSchema7 = {
-  type: "object",
-  required: ["id"],
-  properties: {
-    id: { type: "string", format: "uuid" },
-  },
-};
 
 const companyParams: JSONSchema7 = {
   type: "object",
@@ -23,30 +15,52 @@ const companyParams: JSONSchema7 = {
 
 const createUserBody: JSONSchema7 = {
   type: "object",
-  required: ["username", "password", "firstName", "lastName", "addressId"],
+  required: ["username", "password", "firstName", "lastName"],
   properties: {
-    username: { type: "string", minLength: 3 },
-    password: { type: "string", minLength: 6 },
-    firstName: { type: "string", minLength: 1 },
-    lastName: { type: "string", minLength: 1 },
+    username: { type: "string" },
+    password: { type: "string" },
+    firstName: { type: "string" },
+    lastName: { type: "string" },
     email: { type: "string", format: "email" },
-    mobile: { type: "string", minLength: 10 },
-    addressId: { type: "string", format: "uuid" },
+    mobile: { type: "string" },
   },
-  additionalProperties: false,
+};
+
+const createCompanyAdminUserBody: JSONSchema7 = {
+  type: "object",
+  required: ["company", "user"],
+  properties: {
+    company: { type: "object" },
+    user: { type: "object" },
+  },
 };
 
 const updateUserBody: JSONSchema7 = {
   type: "object",
   properties: {
-    username: { type: "string", minLength: 3 },
     firstName: { type: "string" },
     lastName: { type: "string" },
+    isActive: { type: "boolean" },
+    addressId: { type: "string", format: "uuid" },
+    profileAssetId: { type: "string", format: "uuid" },
+  },
+};
+
+const uniqueFieldBody: JSONSchema7 = {
+  type: "object",
+  properties: {
+    username: { type: "string" },
     email: { type: "string", format: "email" },
     mobile: { type: "string" },
-    isActive: { type: "boolean" },
   },
-  additionalProperties: false,
+};
+
+const verificationBody: JSONSchema7 = {
+  type: "object",
+  properties: {
+    isEmailVerified: { type: "boolean" },
+    isMobileVerified: { type: "boolean" },
+  },
 };
 
 /* ---------------- RESPONSE ---------------- */
@@ -61,7 +75,6 @@ const userResponse: JSONSchema7 = {
     email: { type: "string" },
     mobile: { type: "string" },
   },
-  required: ["id", "username", "firstName", "lastName"],
 };
 
 const companyResponse: JSONSchema7 = {
@@ -71,7 +84,6 @@ const companyResponse: JSONSchema7 = {
     name: { type: "string" },
     isActive: { type: "boolean" },
   },
-  required: ["id", "name", "isActive"],
 };
 
 const companyUsers: JSONSchema7 = {
@@ -83,7 +95,6 @@ const companyUsers: JSONSchema7 = {
       items: userResponse,
     },
   },
-  required: ["company", "users"],
 };
 
 const allUsersResponse: JSONSchema7 = {
@@ -97,33 +108,52 @@ const tags = ["User"];
 
 export const getAllUsersSchema = buildSchema({
   tags,
-  response200: allUsersResponse,
+  response: { 200: allUsersResponse },
 });
 
 export const getCompanyUsersSchema = buildSchema({
   tags,
   params: companyParams,
-  response200: companyUsers,
+  response: { 200: companyUsers },
 });
 
 export const getUserByIdSchema = buildSchema({
   tags,
   params: idParams,
-  response200: userResponse,
+  response: { 200: userResponse },
 });
 
 export const createCompanyUserSchema = buildSchema({
   tags,
-  params: companyParams,
   body: createUserBody,
-  response200: userResponse,
+  response: { 200: userResponse },
+});
+
+export const createCompanyAdminUserSchema = buildSchema({
+  tags,
+  body: createCompanyAdminUserBody,
+  response: { 200: userResponse },
 });
 
 export const updateUserSchema = buildSchema({
   tags,
   params: idParams,
   body: updateUserBody,
-  response200: userResponse,
+  response: { 200: userResponse },
+});
+
+export const updateUniqueFieldSchema = buildSchema({
+  tags,
+  params: idParams,
+  body: uniqueFieldBody,
+  response: { 200: userResponse },
+});
+
+export const updateVerificationStatusSchema = buildSchema({
+  tags,
+  params: idParams,
+  body: verificationBody,
+  response: { 200: userResponse },
 });
 
 export const deleteUserSchema = buildSchema({

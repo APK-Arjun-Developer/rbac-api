@@ -71,7 +71,6 @@ export class UserController extends BaseController {
    * Creates a new company user with validation.
    * @async
    * @param {FastifyRequest} request - Fastify request with companyId param and user data in body
-   * @param {string} request.params.companyId - The company to associate the new user with
    * @param {Object} request.body - User creation data (email, username, password, mobile, etc.)
    * @param {FastifyReply} reply - Fastify reply object for sending response
    * @returns {Promise<FastifyReply>} HTTP 201 response with newly created user data
