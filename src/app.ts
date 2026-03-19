@@ -1,14 +1,19 @@
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { userRoutes } from "@route";
 import { env } from "@config";
+import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "@schema";
 
-export const app = Fastify({ logger: true });
+export const app = Fastify({ logger: true })
+  .withTypeProvider<ZodTypeProvider>();
+
+app.setValidatorCompiler(validatorCompiler);
+app.setSerializerCompiler(serializerCompiler);
 
 const swaggerServerURL = env.CODESPACE_URL || env.SERVER_URL;
 
-// Register Swagger
 app.register(swagger, {
   openapi: {
     info: {
@@ -18,11 +23,11 @@ app.register(swagger, {
     },
     servers: [{ url: swaggerServerURL }],
   },
+  transform: jsonSchemaTransform,
 });
 
 app.register(swaggerUI, {
   routePrefix: env.SWAGGER_ROUTE,
 });
 
-// Register routes
 app.register(userRoutes, { prefix: "/api/users" });
