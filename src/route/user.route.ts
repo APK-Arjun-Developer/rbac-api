@@ -1,65 +1,92 @@
+import { SystemRoleType } from "@prisma/client";
 import { FastifyInstance } from "fastify";
 import { userController } from "@controller";
+import { authenticate, authorizeSelfOrRoles, authorizeSystemRoles } from "@middleware";
 import {
+  createCompanyAdminUserSchema,
+  createCompanyUserSchema,
+  deleteUserSchema,
   getAllUsersSchema,
   getCompanyUsersSchema,
   getUserByIdSchema,
-  createCompanyUserSchema,
-  createCompanyAdminUserSchema,
-  updateUserSchema,
   updateUniqueFieldSchema,
+  updateUserSchema,
   updateVerificationStatusSchema,
-  deleteUserSchema,
 } from "@schema";
 
 export async function userRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/all",
-    { schema: getAllUsersSchema },
+    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN)], schema: getAllUsersSchema },
     userController.getAllUsers.bind(userController),
   );
 
   fastify.get(
     "/company-users",
-    { schema: getCompanyUsersSchema },
+    {
+      preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.COMPANY_ADMIN)],
+      schema: getCompanyUsersSchema,
+    },
     userController.getCompanyUsers.bind(userController),
   );
 
-  fastify.get("/:id", { schema: getUserByIdSchema }, userController.getById.bind(userController));
+  fastify.get(
+    "/:id",
+    {
+      preHandler: [
+        authenticate,
+        authorizeSelfOrRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN),
+      ],
+      schema: getUserByIdSchema,
+    },
+    userController.getById.bind(userController),
+  );
 
   fastify.post(
     "/company-user",
-    { schema: createCompanyUserSchema },
+    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.COMPANY_ADMIN)], schema: createCompanyUserSchema },
     userController.createCompanyUser.bind(userController),
   );
 
   fastify.post(
     "/company-admin",
-    { schema: createCompanyAdminUserSchema },
+    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN)], schema: createCompanyAdminUserSchema },
     userController.createCompanyAdminUser.bind(userController),
   );
 
   fastify.patch(
     "/:id",
-    { schema: updateUserSchema },
+    {
+      preHandler: [
+        authenticate,
+        authorizeSelfOrRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN),
+      ],
+      schema: updateUserSchema,
+    },
     userController.updateUser.bind(userController),
   );
 
   fastify.patch(
     "/:id/unique",
-    { schema: updateUniqueFieldSchema },
+    {
+      preHandler: [
+        authenticate,
+        authorizeSelfOrRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN),
+      ],
+      schema: updateUniqueFieldSchema,
+    },
     userController.updateUniqueField.bind(userController),
   );
 
   fastify.patch(
     "/:id/verification",
-    { schema: updateVerificationStatusSchema },
+    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN)], schema: updateVerificationStatusSchema },
     userController.updateVerificationStatus.bind(userController),
   );
 
   fastify.delete(
     "/:id",
-    { schema: deleteUserSchema },
+    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN)], schema: deleteUserSchema },
     userController.deleteUser.bind(userController),
   );
 }

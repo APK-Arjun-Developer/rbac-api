@@ -1,3 +1,6 @@
+import type { z } from "zod";
+import type { idParamsSchema } from "@schema";
+
 export type TExcludeFields =
   | "createdAt"
   | "createdBy"
@@ -7,6 +10,4 @@ export type TExcludeFields =
   | "deletedBy"
   | "password";
 
-export interface IIdParams {
-  id: string;
-}
+export type IIdParams = z.infer<typeof idParamsSchema>;
