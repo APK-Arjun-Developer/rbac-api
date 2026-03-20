@@ -1,25 +1,79 @@
-import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
+import { SystemRoleType } from "@prisma/client";
+import { FastifyRequest } from "fastify";
 import { env } from "@config";
+import { ForbiddenError, UnauthorizedError, authService } from "@service";
 
-/**
- * Authentication Middleware
- * Expected Authorization header format: "Bearer <jwt_token>"
- * @async
- * @param {FastifyRequest} req - Fastify request object
- * @param {FastifyReply} res - Fastify reply object
- * @returns {Promise<void>} Returns early with 401 if auth fails, continues otherwise
- * @throws {401} If Authorization header is missing or token is invalid
- */
-export async function authMiddleware(req: FastifyRequest, res: FastifyReply) {
-  const auth = req.headers.authorization;
-  if (!auth) return res.status(401).send({ message: "Unauthorized" });
+function getBearerToken(request: FastifyRequest) {
+  const authorization = request.headers.authorization;
 
-  const token = auth.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-    (req as any).user = decoded;
-  } catch {
-    return res.status(401).send({ message: "Invalid token" });
+  if (!authorization?.startsWith("Bearer ")) {
+    throw new UnauthorizedError("Unauthorized");
   }
+
+  return authorization.slice(7).trim();
+}
+
+export async function authenticate(request: FastifyRequest) {
+  const token = getBearerToken(request);
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET);
+
+    if (!payload || typeof payload === "string") {
+      throw new UnauthorizedError("Invalid token");
+    }
+
+    if (!payload?.userId) {
+      throw new UnauthorizedError("Invalid token");
+    }
+
+    request.authUser = await authService.getAuthUser(payload.userId);
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      throw error;
+    }
+
+    throw new UnauthorizedError("Invalid token");
+  }
+}
+
+export function authorizeSystemRoles(...roles: SystemRoleType[]) {
+  return async (request: FastifyRequest) => {
+    if (!request.authUser) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    if (!roles.includes(request.authUser.systemRole)) {
+      throw new ForbiddenError("Forbidden");
+    }
+  };
+}
+
+function getRequestParamId(request: FastifyRequest) {
+  if (!request.params || typeof request.params !== "object") {
+    return undefined;
+  }
+
+  const { id } = request.params as Record<string, unknown>;
+  return typeof id === "string" ? id : undefined;
+}
+
+export function authorizeSelfOrRoles(...roles: SystemRoleType[]) {
+  return async (request: FastifyRequest) => {
+    if (!request.authUser) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const routeUserId = getRequestParamId(request);
+
+    if (routeUserId && routeUserId === request.authUser.userId) {
+      return;
+    }
+
+    if (roles.includes(request.authUser.systemRole)) {
+      return;
+    }
+
+    throw new ForbiddenError("Forbidden");
+  };
 }

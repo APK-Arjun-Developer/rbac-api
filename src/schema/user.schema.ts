@@ -1,162 +1,147 @@
-import { JSONSchema7 } from "json-schema";
-import { buildSchema, idParams } from "@schema";
+import { z } from "zod";
+import { AssetStorageType } from "@prisma/client";
+import { buildSchema, buildSuccessResponseSchema, idParamsSchema } from "@schema";
 
-/* ---------------- PARAMS ---------------- */
+export const addressPayloadSchema = z.object({
+  addressLine1: z.string().min(1),
+  addressLine2: z.string().nullable(),
+  city: z.string().min(1),
+  district: z.string().min(1),
+  state: z.string().min(1),
+  pincode: z.string().min(1),
+});
 
-const companyParams: JSONSchema7 = {
-  type: "object",
-  required: ["companyId"],
-  properties: {
-    companyId: { type: "string", format: "uuid" },
-  },
-};
+export const assetPayloadSchema = z.object({
+  originalName: z.string().min(1),
+  uploadedName: z.string().min(1),
+  fileFormat: z.string().min(1),
+  storageType: z.nativeEnum(AssetStorageType),
+  relativePath: z.string().min(1),
+});
 
-/* ---------------- BODY ---------------- */
+export const rolePayloadSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable(),
+  permissionIds: z.array(z.string().uuid()),
+});
 
-const createUserBody: JSONSchema7 = {
-  type: "object",
-  required: ["username", "password", "firstName", "lastName"],
-  properties: {
-    username: { type: "string" },
-    password: { type: "string" },
-    firstName: { type: "string" },
-    lastName: { type: "string" },
-    email: { type: "string", format: "email" },
-    mobile: { type: "string" },
-  },
-};
+export const createUserBodySchema = z.object({
+  address: addressPayloadSchema,
+  profileAsset: assetPayloadSchema.nullable(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email().nullable(),
+  mobile: z.string().min(1).nullable(),
+});
 
-const createCompanyAdminUserBody: JSONSchema7 = {
-  type: "object",
-  required: ["company", "user"],
-  properties: {
-    company: { type: "object" },
-    user: { type: "object" },
-  },
-};
+export const createCompanyPayloadSchema = z.object({
+  address: addressPayloadSchema,
+  profileAsset: assetPayloadSchema.nullable(),
+  roles: z.array(rolePayloadSchema),
+  name: z.string().min(1),
+});
 
-const updateUserBody: JSONSchema7 = {
-  type: "object",
-  properties: {
-    firstName: { type: "string" },
-    lastName: { type: "string" },
-    isActive: { type: "boolean" },
-    addressId: { type: "string", format: "uuid" },
-    profileAssetId: { type: "string", format: "uuid" },
-  },
-};
+export const createCompanyAdminUserBodySchema = z.object({
+  company: createCompanyPayloadSchema,
+  user: createUserBodySchema,
+  roles: z.array(rolePayloadSchema),
+});
 
-const uniqueFieldBody: JSONSchema7 = {
-  type: "object",
-  properties: {
-    username: { type: "string" },
-    email: { type: "string", format: "email" },
-    mobile: { type: "string" },
-  },
-};
+export const updateUserBodySchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  isActive: z.boolean().optional(),
+  addressId: z.string().uuid().optional(),
+  profileAssetId: z.string().uuid().nullable().optional(),
+});
 
-const verificationBody: JSONSchema7 = {
-  type: "object",
-  properties: {
-    isEmailVerified: { type: "boolean" },
-    isMobileVerified: { type: "boolean" },
-  },
-};
+export const uniqueFieldBodySchema = z.object({
+  username: z.string().min(1).optional(),
+  email: z.string().email().nullable().optional(),
+  mobile: z.string().min(1).nullable().optional(),
+});
 
-/* ---------------- RESPONSE ---------------- */
+export const verificationBodySchema = z.object({
+  isEmailVerified: z.boolean().nullable().optional(),
+  isMobileVerified: z.boolean().nullable().optional(),
+});
 
-const userResponse: JSONSchema7 = {
-  type: "object",
-  properties: {
-    id: { type: "string" },
-    username: { type: "string" },
-    firstName: { type: "string" },
-    lastName: { type: "string" },
-    email: { type: "string" },
-    mobile: { type: "string" },
-  },
-};
+export const userResponseSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string().nullable(),
+  mobile: z.string().nullable(),
+});
 
-const companyResponse: JSONSchema7 = {
-  type: "object",
-  properties: {
-    id: { type: "string" },
-    name: { type: "string" },
-    isActive: { type: "boolean" },
-  },
-};
+export const companyResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  isActive: z.boolean(),
+});
 
-const companyUsers: JSONSchema7 = {
-  type: "object",
-  properties: {
-    company: companyResponse,
-    users: {
-      type: "array",
-      items: userResponse,
-    },
-  },
-};
+export const companyUsersResponseSchema = z.object({
+  company: companyResponseSchema,
+  users: z.array(userResponseSchema),
+});
 
-const allUsersResponse: JSONSchema7 = {
-  type: "array",
-  items: companyUsers,
-};
+export const allUsersResponseSchema = z.array(companyUsersResponseSchema);
 
 const tags = ["User"];
 
-/* ---------------- EXPORTS ---------------- */
-
 export const getAllUsersSchema = buildSchema({
   tags,
-  response: { 200: allUsersResponse },
+  response: { 200: buildSuccessResponseSchema(allUsersResponseSchema) },
 });
 
 export const getCompanyUsersSchema = buildSchema({
   tags,
-  params: companyParams,
-  response: { 200: companyUsers },
+  response: { 200: buildSuccessResponseSchema(companyUsersResponseSchema) },
 });
 
 export const getUserByIdSchema = buildSchema({
   tags,
-  params: idParams,
-  response: { 200: userResponse },
+  params: idParamsSchema,
+  response: { 200: buildSuccessResponseSchema(userResponseSchema) },
 });
 
 export const createCompanyUserSchema = buildSchema({
   tags,
-  body: createUserBody,
-  response: { 200: userResponse },
+  body: createUserBodySchema,
+  response: { 200: buildSuccessResponseSchema(userResponseSchema) },
 });
 
 export const createCompanyAdminUserSchema = buildSchema({
   tags,
-  body: createCompanyAdminUserBody,
-  response: { 200: userResponse },
+  body: createCompanyAdminUserBodySchema,
+  response: { 201: buildSuccessResponseSchema(userResponseSchema) },
 });
 
 export const updateUserSchema = buildSchema({
   tags,
-  params: idParams,
-  body: updateUserBody,
-  response: { 200: userResponse },
+  params: idParamsSchema,
+  body: updateUserBodySchema,
+  response: { 200: buildSuccessResponseSchema(userResponseSchema) },
 });
 
 export const updateUniqueFieldSchema = buildSchema({
   tags,
-  params: idParams,
-  body: uniqueFieldBody,
-  response: { 200: userResponse },
+  params: idParamsSchema,
+  body: uniqueFieldBodySchema,
+  response: { 200: buildSuccessResponseSchema(userResponseSchema) },
 });
 
 export const updateVerificationStatusSchema = buildSchema({
   tags,
-  params: idParams,
-  body: verificationBody,
-  response: { 200: userResponse },
+  params: idParamsSchema,
+  body: verificationBodySchema,
+  response: { 200: buildSuccessResponseSchema(userResponseSchema) },
 });
 
 export const deleteUserSchema = buildSchema({
   tags,
-  params: idParams,
+  params: idParamsSchema,
 });

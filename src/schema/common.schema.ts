@@ -1,59 +1,45 @@
-import { FastifySchema } from "fastify";
-import { JSONSchema7 } from "json-schema";
+import { z } from "zod";
+import type { FastifySchema } from "fastify";
 
-/* ---------------- ERROR SCHEMA ---------------- */
-
-const errorResponse: JSONSchema7 = {
-  type: "object",
-  properties: {
-    statusCode: { type: "number" },
-    error: { type: "string" },
-    message: { type: "string" },
-  },
-  required: ["statusCode", "error", "message"],
-};
-
-/* ---------------- COMMON RESPONSES ---------------- */
+export const errorResponseSchema = z.object({
+  error: z.string(),
+  message: z.string(),
+});
 
 const commonErrors = {
-  400: errorResponse,
-  401: errorResponse,
-  403: errorResponse,
-  404: errorResponse,
-  409: errorResponse,
-  500: errorResponse,
-};
+  400: errorResponseSchema,
+  401: errorResponseSchema,
+  403: errorResponseSchema,
+  404: errorResponseSchema,
+  409: errorResponseSchema,
+  500: errorResponseSchema,
+} satisfies Record<number, z.ZodTypeAny>;
 
-/* ---------------- SCHEMA BUILDER ---------------- */
+export const buildSuccessResponseSchema = <T extends z.ZodTypeAny>(data: T) =>
+  z.object({
+    message: z.string(),
+    data,
+  });
 
-interface BuildSchemaOptions {
+type BuildSchemaOptions = {
   tags?: string[];
-  params?: JSONSchema7;
-  querystring?: JSONSchema7;
-  body?: JSONSchema7;
-  response?: Record<number, JSONSchema7>;
-}
-
-export const buildSchema = (options: BuildSchemaOptions): FastifySchema => {
-  return {
-    ...(options.tags && { tags: options.tags }),
-    ...(options.params && { params: options.params }),
-    ...(options.querystring && { querystring: options.querystring }),
-    ...(options.body && { body: options.body }),
-
-    response: {
-      ...options.response,
-      ...commonErrors,
-    },
-  };
+  params?: z.ZodTypeAny;
+  querystring?: z.ZodTypeAny;
+  body?: z.ZodTypeAny;
+  response?: Partial<Record<number, z.ZodTypeAny>>;
 };
 
-/* ---------------- COMMON PARAMS ---------------- */
-
-export const idParams: JSONSchema7 = {
-  type: "object",
-  required: ["id"],
-  properties: {
-    id: { type: "string", format: "uuid" },
+export const buildSchema = (options: BuildSchemaOptions): FastifySchema => ({
+  ...(options.tags && { tags: options.tags }),
+  ...(options.params && { params: options.params }),
+  ...(options.querystring && { querystring: options.querystring }),
+  ...(options.body && { body: options.body }),
+  response: {
+    ...options.response,
+    ...commonErrors,
   },
-};
+});
+
+export const idParamsSchema = z.object({
+  id: z.string().uuid(),
+});

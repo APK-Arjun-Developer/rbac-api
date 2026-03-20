@@ -21,3 +21,7 @@ export interface ICreateCompanyAdminUserPayload {
   company: ICreateCompanyPayload;
   roles: IRolePayload[];
 }
+
+export interface ICreateCompanyAdminUserRoute {
+  Body: ICreateCompanyAdminUserPayload;
+}
