@@ -1,15 +1,14 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { UserService } from "@service";
+import { UserService, NotFoundError } from "@service";
 import { BaseController } from "@controller";
 import {
-  ICreateCompanyAdminUserPayload,
-  ICreateUserPayload,
-  IIdParams,
-  IUniqueUserFields,
-  IUpdateUserPayload,
-  IUpdateVerificationStatusPayload,
+  ICreateCompanyAdminUserRoute,
+  ICreateCompanyUserRoute,
+  IGetUserByIdRoute,
+  IUpdateUniqueFieldRoute,
+  IUpdateUserRoute,
+  IUpdateVerificationStatusRoute,
 } from "@type";
-import { NotFoundError } from "@service";
 
 export class UserController extends BaseController {
   private readonly userService: UserService;
@@ -25,7 +24,7 @@ export class UserController extends BaseController {
   }
 
   async getCompanyUsers(request: FastifyRequest, reply: FastifyReply) {
-    const companyId = request.authUser?.companyId;
+    const companyId = request.authUser.companyId;
 
     if (!companyId) {
       throw new NotFoundError("Company not found for user");
@@ -35,17 +34,14 @@ export class UserController extends BaseController {
     return this.success(reply, data);
   }
 
-  async getById(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
+  async getById(request: FastifyRequest<IGetUserByIdRoute>, reply: FastifyReply) {
     const { id } = request.params;
     const user = await this.userService.getById(id);
     return this.success(reply, user);
   }
 
-  async createCompanyUser(
-    request: FastifyRequest<{ Body: ICreateUserPayload }>,
-    reply: FastifyReply,
-  ) {
-    const companyId = request.authUser?.companyId;
+  async createCompanyUser(request: FastifyRequest<ICreateCompanyUserRoute>, reply: FastifyReply) {
+    const companyId = request.authUser.companyId;
 
     if (!companyId) {
       throw new NotFoundError("Company not found for user");
@@ -56,24 +52,21 @@ export class UserController extends BaseController {
   }
 
   async createCompanyAdminUser(
-    request: FastifyRequest<{ Body: ICreateCompanyAdminUserPayload }>,
+    request: FastifyRequest<ICreateCompanyAdminUserRoute>,
     reply: FastifyReply,
   ) {
     const user = await this.userService.createCompanyAdminUser(request.body);
     return this.created(reply, user);
   }
 
-  async updateUniqueField(
-    request: FastifyRequest<{ Params: IIdParams; Body: IUniqueUserFields }>,
-    reply: FastifyReply,
-  ) {
+  async updateUniqueField(request: FastifyRequest<IUpdateUniqueFieldRoute>, reply: FastifyReply) {
     const { id } = request.params;
     const user = await this.userService.updateUniqueField(id, request.body);
     return this.success(reply, user);
   }
 
   async updateVerificationStatus(
-    request: FastifyRequest<{ Params: IIdParams; Body: IUpdateVerificationStatusPayload }>,
+    request: FastifyRequest<IUpdateVerificationStatusRoute>,
     reply: FastifyReply,
   ) {
     const { id } = request.params;
@@ -81,18 +74,15 @@ export class UserController extends BaseController {
     return this.success(reply, user);
   }
 
-  async updateUser(
-    request: FastifyRequest<{ Params: IIdParams; Body: IUpdateUserPayload }>,
-    reply: FastifyReply,
-  ) {
+  async updateUser(request: FastifyRequest<IUpdateUserRoute>, reply: FastifyReply) {
     const { id } = request.params;
     const user = await this.userService.updateUser(id, request.body);
     return this.success(reply, user);
   }
 
-  async deleteUser(request: FastifyRequest<{ Params: IIdParams }>, reply: FastifyReply) {
+  async deleteUser(request: FastifyRequest<IGetUserByIdRoute>, reply: FastifyReply) {
     const { id } = request.params;
-    const deletedBy = request.authUser?.userId ?? "system";
+    const deletedBy = request.authUser.userId ?? "system";
     await this.userService.deleteUser(id, deletedBy);
     return this.noContent(reply);
   }

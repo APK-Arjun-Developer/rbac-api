@@ -1,8 +1,5 @@
 import { z } from "zod";
 import type { FastifySchema } from "fastify";
-import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
-
-export { jsonSchemaTransform, serializerCompiler, validatorCompiler };
 
 export const errorResponseSchema = z.object({
   error: z.string(),

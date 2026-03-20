@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { db, env } from "@config";
-import { BaseService, NotFoundError, UnauthorizedError } from "@service";
+import { BaseService, UnauthorizedError } from "@service";
 import { UserRepository } from "@repository";
 import { IAuthUser, IJwtPayload, ILoginPayload } from "@type";
 
@@ -41,29 +41,22 @@ export class AuthService extends BaseService {
         throw new UnauthorizedError("Unauthorized");
       }
 
+      const company = user.userCompanies.find((userCompany) => userCompany.deletedAt === null);
+      if (!company || company.deletedAt) {
+        throw new UnauthorizedError("Unauthorized");
+      }
+
       return {
         userId: user.id,
         systemRole: user.systemRole,
-        companyId:
-          user.userCompanies.find((userCompany) => userCompany.deletedAt === null)?.companyId ?? null,
+        companyId: company.companyId,
       };
     });
   }
 
-  async getPrimaryCompanyId(userId: string) {
-    const authUser = await this.getAuthUser(userId);
-    const { companyId } = authUser;
-
-    if (!companyId) {
-      throw new NotFoundError("Company not found for user");
-    }
-
-    return companyId;
-  }
-
   private generateAccessToken(payload: IJwtPayload) {
     return jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRY,
+      expiresIn: env.JWT_ACCESS_EXPIRY as jwt.SignOptions["expiresIn"],
     });
   }
 }

@@ -2,6 +2,14 @@ import { SystemRoleType } from "@prisma/client";
 import { FastifyInstance } from "fastify";
 import { userController } from "@controller";
 import { authenticate, authorizeSelfOrRoles, authorizeSystemRoles } from "@middleware";
+import type {
+  ICreateCompanyAdminUserRoute,
+  ICreateCompanyUserRoute,
+  IGetUserByIdRoute,
+  IUpdateUniqueFieldRoute,
+  IUpdateUserRoute,
+  IUpdateVerificationStatusRoute,
+} from "@type";
 import {
   createCompanyAdminUserSchema,
   createCompanyUserSchema,
@@ -17,7 +25,10 @@ import {
 export async function userRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/all",
-    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN)], schema: getAllUsersSchema },
+    {
+      preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN)],
+      schema: getAllUsersSchema,
+    },
     userController.getAllUsers.bind(userController),
   );
 
@@ -30,31 +41,34 @@ export async function userRoutes(fastify: FastifyInstance) {
     userController.getCompanyUsers.bind(userController),
   );
 
-  fastify.get(
+  fastify.get<IGetUserByIdRoute>(
     "/:id",
     {
-      preHandler: [
-        authenticate,
-        authorizeSelfOrRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN),
-      ],
+      preHandler: [authenticate],
       schema: getUserByIdSchema,
     },
     userController.getById.bind(userController),
   );
 
-  fastify.post(
+  fastify.post<ICreateCompanyUserRoute>(
     "/company-user",
-    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.COMPANY_ADMIN)], schema: createCompanyUserSchema },
+    {
+      preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.COMPANY_ADMIN)],
+      schema: createCompanyUserSchema,
+    },
     userController.createCompanyUser.bind(userController),
   );
 
-  fastify.post(
+  fastify.post<ICreateCompanyAdminUserRoute>(
     "/company-admin",
-    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN)], schema: createCompanyAdminUserSchema },
+    {
+      preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN)],
+      schema: createCompanyAdminUserSchema,
+    },
     userController.createCompanyAdminUser.bind(userController),
   );
 
-  fastify.patch(
+  fastify.patch<IUpdateUserRoute>(
     "/:id",
     {
       preHandler: [
@@ -66,7 +80,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     userController.updateUser.bind(userController),
   );
 
-  fastify.patch(
+  fastify.patch<IUpdateUniqueFieldRoute>(
     "/:id/unique",
     {
       preHandler: [
@@ -78,15 +92,27 @@ export async function userRoutes(fastify: FastifyInstance) {
     userController.updateUniqueField.bind(userController),
   );
 
-  fastify.patch(
+  fastify.patch<IUpdateVerificationStatusRoute>(
     "/:id/verification",
-    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN)], schema: updateVerificationStatusSchema },
+    {
+      preHandler: [
+        authenticate,
+        authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN),
+      ],
+      schema: updateVerificationStatusSchema,
+    },
     userController.updateVerificationStatus.bind(userController),
   );
 
-  fastify.delete(
+  fastify.delete<IGetUserByIdRoute>(
     "/:id",
-    { preHandler: [authenticate, authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN)], schema: deleteUserSchema },
+    {
+      preHandler: [
+        authenticate,
+        authorizeSystemRoles(SystemRoleType.SYSTEM_ADMIN, SystemRoleType.COMPANY_ADMIN),
+      ],
+      schema: deleteUserSchema,
+    },
     userController.deleteUser.bind(userController),
   );
 }

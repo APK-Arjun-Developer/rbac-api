@@ -2,9 +2,7 @@ import jwt from "jsonwebtoken";
 import { SystemRoleType } from "@prisma/client";
 import { FastifyRequest } from "fastify";
 import { env } from "@config";
-import { authService } from "@service";
-import { ForbiddenError, UnauthorizedError } from "@service";
-import { IJwtPayload } from "@type";
+import { ForbiddenError, UnauthorizedError, authService } from "@service";
 
 function getBearerToken(request: FastifyRequest) {
   const authorization = request.headers.authorization;
@@ -19,7 +17,11 @@ function getBearerToken(request: FastifyRequest) {
 export async function authenticate(request: FastifyRequest) {
   const token = getBearerToken(request);
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as IJwtPayload;
+    const payload = jwt.verify(token, env.JWT_SECRET);
+
+    if (!payload || typeof payload === "string") {
+      throw new UnauthorizedError("Invalid token");
+    }
 
     if (!payload?.userId) {
       throw new UnauthorizedError("Invalid token");
@@ -47,18 +49,31 @@ export function authorizeSystemRoles(...roles: SystemRoleType[]) {
   };
 }
 
+function getRequestParamId(request: FastifyRequest) {
+  if (!request.params || typeof request.params !== "object") {
+    return undefined;
+  }
+
+  const { id } = request.params as Record<string, unknown>;
+  return typeof id === "string" ? id : undefined;
+}
+
 export function authorizeSelfOrRoles(...roles: SystemRoleType[]) {
-  return async (request: FastifyRequest<{ Params?: { id?: string } }>) => {
+  return async (request: FastifyRequest) => {
     if (!request.authUser) {
       throw new UnauthorizedError("Unauthorized");
     }
 
-    if (request.params?.id === request.authUser.userId) {
+    const routeUserId = getRequestParamId(request);
+
+    if (routeUserId && routeUserId === request.authUser.userId) {
       return;
     }
 
-    if (!roles.includes(request.authUser.systemRole)) {
-      throw new ForbiddenError("Forbidden");
+    if (roles.includes(request.authUser.systemRole)) {
+      return;
     }
+
+    throw new ForbiddenError("Forbidden");
   };
 }

@@ -8,6 +8,10 @@ export interface IJwtPayload {
 
 export type ILoginPayload = z.infer<typeof loginBodySchema>;
 
+export interface ILoginRoute {
+  Body: ILoginPayload;
+}
+
 export type IAccessTokenResponse = z.infer<typeof accessTokenResponseSchema>;
 
 export interface IAuthUser {
@@ -18,6 +22,6 @@ export interface IAuthUser {
 
 declare module "fastify" {
   interface FastifyRequest {
-    authUser?: IAuthUser;
+    authUser: IAuthUser;
   }
 }

@@ -1,10 +1,14 @@
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
-import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  ZodTypeProvider,
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
 import { authRoutes, userRoutes } from "@route";
 import { env } from "@config";
-import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "@schema";
 import { AppError, LoggerService } from "@service";
 
 const logger = new LoggerService("App");
@@ -15,14 +19,13 @@ app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
 app.setErrorHandler((error, request, reply) => {
-  logger.error(`Unhandled error on ${request.method} ${request.url}`, error);
-
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({
       error: error.name,
       message: error.message,
     });
   }
+  logger.error(`Unhandled error on ${request.method} ${request.url}`, error);
 
   return reply.status(500).send({
     error: "InternalServerError",
