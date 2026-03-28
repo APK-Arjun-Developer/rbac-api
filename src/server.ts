@@ -5,7 +5,6 @@ async function start() {
   try {
     await app.listen({
       port: env.PORT,
-      host: env.HOST,
     });
 
     console.log(`🚀 Server running at ${env.SERVER_URL}`);
