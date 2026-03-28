@@ -3,6 +3,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec bun src/server.ts",
+    "build": "tsc",
+    "start": "bun dist/server.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
